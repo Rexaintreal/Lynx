@@ -1,55 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lynx</title>
 
-  <!-- Favicon & Manifest -->
+  <!-- Favicons -->
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
   <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
   <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
-  <link rel="icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
 
-  <!-- Inter font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Custom CSS -->
-  <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
-  <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body>
-  <!-- Wrapper -->
-  <div class="page-wrapper">
+<body class="light">
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('face_detection') }}">Face Detection</a>
+      <button id="theme-toggle" class="theme-btn"><i class="fa-solid fa-moon"></i></button>
+    </div>
+  </nav>
 
-    <!-- Navbar -->
-    <nav class="navbar">
-      <div class="logo-title">
-        <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Logo" class="logo">
-        <span class="title">Lynx</span>
+  <main class="landing">
+    <h1>Welcome to Lynx</h1>
+    <p class="subtitle">Lynx is a project combining several smaller OpenCV initiatives developed for the <a href="https://hackberry.hackclub.com">Hackberry YSWS</a> event, featuring various image processing functionalities on its website.</p>
+    <div class="buttons">
+      <a href="{{ url_for('face_detection') }}" class="btn primary">
+        <i class="fa-solid fa-user"></i> Try Face Detection
+      </a>
+    </div>
+
+    <section id="features" class="features">
+      <div class="feature">
+        <i class="fa-solid fa-face-smile"></i>
+        <h3>Face Detection</h3>
+        <p>Smart recognition with one click.</p>
       </div>
+      </div>
+      <div class="feature">
+        <i class="fa-solid fa-image"></i>
+        <h3>Image Filters</h3>
+        <p>Apply artistic effects instantly.</p>
+      </div>
+      <div class="feature">
+        <i class="fa-solid fa-eye"></i>
+        <h3>Object Detection</h3>
+        <p>Identify objects in any image.</p>
+      </div>
+    </section>
+  </main>
 
-      <!-- Toggle -->
-      <label class="switch">
-        <input type="checkbox" id="theme-toggle">
-        <span class="slider round"></span>
-      </label>
-    </nav>
+  <footer class="footer">Built with OpenCV & Flask</footer>
 
-    <!-- Main -->
-    <main class="main">
-      <h1>Something will be built here!</h1>
-      <p>Upload images, detect faces, and apply cool filters soon...</p>
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer">
-      <p>&copy; 2025 Lynx</p>
-    </footer>
-
-  </div>
+  <!-- JS -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

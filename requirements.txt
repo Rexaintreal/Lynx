@@ -1,2 +1,5 @@
-flask 
+flask
 opencv-python
+numpy
+pillow
+Werkzeug
