@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lynx</title>
+
+  <!-- Favicon & Manifest -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+
+
+</head>
+<body>
+  <!-- Wrapper -->
+  <div class="page-wrapper">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="logo-title">
+        <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Logo" class="logo">
+        <span class="title">Lynx</span>
+      </div>
+
+      <!-- Toggle -->
+      <label class="switch">
+        <input type="checkbox" id="theme-toggle">
+        <span class="slider round"></span>
+      </label>
+    </nav>
+
+    <!-- Main -->
+    <main class="main">
+      <h1>Something will be built here!</h1>
+      <p>Upload images, detect faces, and apply cool filters soon...</p>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>&copy; 2025 Lynx</p>
+    </footer>
+
+  </div>
+</body>
+</html>
