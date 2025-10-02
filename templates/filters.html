@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Filters - Upload an image and apply real-time filters with sliders and presets." />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Filters</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <!-- Theme initialization -->
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+
+  <!-- Prevent flash -->
+  <style>
+    html { margin: 0; padding: 0; }
+    html.light { background: #FAFAFA !important; color: #18181B !important; }
+    html.dark { background: #09090B !important; color: #F4F4F5 !important; }
+    body { margin: 0; }
+    body.light { background: #FAFAFA; color: #18181B; }
+    body.dark { background: #09090B; color: #F4F4F5; }
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar, html.dark .navbar {
+      background: rgba(9, 9, 11, 0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+  </style>
+
+  <!-- Fonts -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('face_detection') }}">Face Detection</a>
+      <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+      <a href="{{ url_for('filters') }}" aria-current="page">Filters</a>
+      <button id="theme-toggle" class="theme-btn"><i class="fa-solid fa-moon"></i></button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="filters-page">
+    <h1 class="page-title">Filters</h1>
+    <p class="subtitle">Upload an image and experiment with real-time adjustments or preset styles.</p>
+
+    <!-- Upload -->
+    <div class="upload-section">
+      <label class="upload-box" for="file-upload" id="upload-box">
+        <i class="fa-solid fa-upload"></i>
+        <span id="upload-text">Click to upload image</span>
+        <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+        <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
+      </label>
+    </div>
+
+   <!-- Preview + Controls -->
+  <div id="preview" class="preview hidden">
+    <div class="preview-layout">
+      <!-- Left: Preview -->
+      <div class="preview-container">
+        <img id="preview-img" src="" alt="Preview" class="preview-img">
+        <p id="file-name" class="file-name"></p>
+      </div>
+
+      <!-- Right: Controls -->
+      <section class="controls">
+        <h3>Adjust Filters</h3>
+
+        <div class="slider-group">
+          <label>Brightness</label>
+          <input type="range" id="brightness" min="0" max="200" value="100">
+        </div>
+
+        <div class="slider-group">
+          <label>Contrast</label>
+          <input type="range" id="contrast" min="0" max="200" value="100">
+        </div>
+
+        <div class="slider-group">
+          <label>Sepia</label>
+          <input type="range" id="sepia" min="0" max="100" value="0">
+        </div>
+
+        <div class="slider-group">
+          <label>Blur</label>
+          <input type="range" id="blur" min="0" max="10" value="0">
+        </div>
+
+        <div class="dropdown-group">
+          <label for="preset-filters">Preset Filters</label>
+          <select id="preset-filters" class="styled-select">
+            <option value="none">None</option>
+            <option value="grayscale">Grayscale</option>
+            <option value="sepia">Sepia</option>
+            <option value="invert">Invert</option>
+            <option value="cool">Cool Tone</option>
+            <option value="vibrant">Vibrant</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button type="button" id="reset-btn" class="btn secondary">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+          <button type="button" id="save-btn" class="btn primary">
+            <i class="fa-solid fa-floppy-disk"></i> Save Final
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  </main>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

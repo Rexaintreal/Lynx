@@ -1,8 +1,11 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 from models.face_detection import detect_faces
 from models.face_recognition import recognize_faces
+from models.filters import apply_filter
+import base64
+import time
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "uploads"
@@ -77,6 +80,49 @@ def face_recognition():
 @app.route("/uploads/<filename>")
 def uploaded_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+
+
+@app.route("/filters", methods=["GET"])
+def filters():
+    return render_template("filters.html", filename=None)
+
+
+@app.route("/filters/apply", methods=["POST"])
+def apply_filter_route():
+    """Apply OpenCV filter to uploaded image"""
+    try:
+        data = request.get_json()
+        
+        # Get the base64 image data
+        img_data = data["image"].split(",")[1]
+        filter_type = data.get("filter", "none")
+        
+        # Generate unique filename with timestamp
+        timestamp = str(int(time.time() * 1000))
+        filename = f"filtered_{filter_type}_{timestamp}.jpg"
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        
+        # Decode and save input image
+        with open(filepath, "wb") as f:
+            f.write(base64.b64decode(img_data))
+        
+        # Apply filter via OpenCV
+        output_filename = f"processed_{filename}"
+        output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+        apply_filter(filepath, output_path, filter_type)
+        
+        # Return URL to processed image
+        return jsonify({
+            "success": True,
+            "url": url_for("uploaded_file", filename=output_filename)
+        })
+        
+    except Exception as e:
+        print(f"Error applying filter: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 
 if __name__ == "__main__":
