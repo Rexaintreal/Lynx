@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Face Recognition - Upload an image and recognize faces with attributes like age and gender." />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Face Recognition</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    
+    // Apply theme to html element 
+    document.documentElement.classList.add(theme);
+    
+    // Also apply background color directly via style attribute
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+  
+  <!-- Inline CSS to prevent flash -->
+  <style>
+    /* Apply immediately to html root */
+    html {
+      margin: 0;
+      padding: 0;
+    }
+    html.light {
+      background: #FAFAFA !important;
+      color: #18181B !important;
+    }
+    html.dark {
+      background: #09090B !important;
+      color: #F4F4F5 !important;
+    }
+    body {
+      margin: 0;
+    }
+    body.light {
+      background: #FAFAFA;
+      color: #18181B;
+    }
+    body.dark {
+      background: #09090B;
+      color: #F4F4F5;
+    }
+    
+    /* Navbar - prevent flash */
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar,
+    html.dark .navbar {
+      background: rgba(9, 9, 11, 0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+  </style>
+
+  <!-- Preload font and CSS -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+  
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('face_detection') }}">Face Detection</a>
+      <a href="{{ url_for('face_recognition') }}" aria-current="page">Face Recognition</a>
+      <button id="theme-toggle" class="theme-btn"><i class="fa-solid fa-moon"></i></button>
+    </div>
+  </nav>
+
+  <main class="face-recognition">
+    <h1 class="page-title">Face Recognition</h1>
+    <p class="subtitle">Upload an image to recognize faces and analyze attributes</p>
+
+    {% if not filename %}
+    <!-- Upload Section -->
+    <form method="POST" enctype="multipart/form-data" id="upload-form" class="upload-section">
+      <label class="upload-box" for="file-upload" id="upload-box">
+        <i class="fa-solid fa-upload"></i>
+        <span id="upload-text">Click to upload image</span>
+        <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+        <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
+      </label>
+
+      <div id="preview" class="preview hidden">
+        <img id="preview-img" src="" alt="Preview" class="preview-img">
+        <p class="file-name" id="file-name"></p>
+        <button type="submit" class="btn primary hidden" id="process-btn">
+          <i class="fa-solid fa-id-card"></i> Recognize Faces
+        </button>
+      </div>
+    </form>
+    {% endif %}
+
+    {% if filename %}
+    <!-- Result Section -->
+    <section class="result recognition-result">
+      <h3 class="result-title">Recognition Results</h3>
+      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Recognition Result" class="result-img">
+
+      <ul class="attributes attributes-list">
+        {% for person in people %}
+          <li class="attribute-item">
+            <strong class="face-label">Face {{ loop.index }}:</strong>  
+            <span class="age">Age: {{ person.age }}</span> | 
+            <span class="gender">Gender: {{ person.gender }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <div class="actions result-actions">
+        <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary">
+          <i class="fa-solid fa-download"></i> Download
+        </a>
+        <a href="{{ url_for('face_recognition') }}" class="btn secondary">
+          <i class="fa-solid fa-arrow-rotate-right"></i> Try Again
+        </a>
+      </div>
+    </section>
+    {% endif %}
+  </main>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

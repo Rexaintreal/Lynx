@@ -1,10 +1,12 @@
 // Theme toggle
 const toggleBtn = document.getElementById("theme-toggle");
 const body = document.body;
+const html = document.documentElement;
 
 if (toggleBtn) {
   const savedTheme = localStorage.getItem("theme") || "light";
   body.className = savedTheme;
+  html.className = savedTheme;
 
   const icon = toggleBtn.querySelector("i");
   if (savedTheme === "dark") {
@@ -14,6 +16,8 @@ if (toggleBtn) {
   toggleBtn.addEventListener("click", () => {
     body.classList.toggle("dark");
     body.classList.toggle("light");
+    html.classList.toggle("dark");
+    html.classList.toggle("light");
 
     const icon = toggleBtn.querySelector("i");
     if (body.classList.contains("dark")) {

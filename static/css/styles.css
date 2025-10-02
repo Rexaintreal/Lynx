@@ -19,6 +19,9 @@ body {
   margin: 0;
   font-family: 'Inter', sans-serif;
   transition: background 0.3s, color 0.3s;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 body.light {
@@ -29,6 +32,10 @@ body.light {
 body.dark {
   background: #09090B;
   color: #F4F4F5;
+}
+
+main {
+  flex: 1;
 }
 
 /* Navbar */
@@ -45,7 +52,8 @@ body.dark {
   z-index: 100;
 }
 
-body.dark .navbar {
+body.dark .navbar,
+html.dark .navbar {
   border-color: rgba(255,255,255,0.1);
   background: rgba(9, 9, 11, 0.8);
 }
@@ -445,13 +453,125 @@ body.dark .file-name {
 .hidden {
   display: none !important;
 }
-.btn.secondary {
-  background: transparent;
-  border: 2px solid var(--brand-accent);
+
+/*  Face Recognition Page Styles*/
+.face-recognition {
+  text-align: center;
+  padding: 3rem 1rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.face-recognition h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.face-recognition .subtitle {
+  color: #71717A;
+  margin-bottom: 2rem;
+  font-size: 1.05rem;
+}
+body.dark .face-recognition .subtitle {
+  color: #A1A1AA;
+}
+
+/* Upload Box */
+.face-recognition .upload-box {
+  margin-top: 1.5rem;
+  padding: 2rem;
+  border: 2px dashed var(--brand-accent);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  max-width: 420px;  
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.face-recognition .upload-box i {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
   color: var(--brand-accent);
 }
 
-.btn.secondary:hover {
-  background: var(--brand-accent);
-  color: #fff;
+.face-recognition .upload-box:hover {
+  border-color: var(--brand-accent);
+  background: rgba(82,82,91,0.05);
+}
+
+.face-recognition .helper-text {
+  font-size: 0.85rem;
+  color: #71717A;
+  margin-top: 0.5rem;
+}
+body.dark .face-recognition .helper-text {
+  color: #A1A1AA;
+}
+
+/* Preview Box */
+.face-recognition .preview {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+body.dark .face-recognition .preview {
+  background: rgba(255,255,255,0.03);
+}
+
+.face-recognition .preview img {
+  max-width: 100%;
+  max-height: 350px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+/* Results */
+.face-recognition .result {
+  margin-top: 3rem;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+body.dark .face-recognition .result {
+  background: rgba(255,255,255,0.03);
+}
+
+.face-recognition .result img {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.face-recognition .attributes {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+  text-align: left;
+}
+.face-recognition .attributes li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  font-size: 0.95rem;
+}
+body.dark .face-recognition .attributes li {
+  border-color: rgba(255,255,255,0.1);
 }
