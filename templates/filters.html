@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Lynx Filters - Upload an image and apply real-time filters with sliders and presets." />
+  <meta name="description" content="Lynx Filters - Upload an image and apply OpenCV filters." />
   <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
   <title>Lynx - Filters</title>
@@ -48,6 +48,33 @@
       background: rgba(9, 9, 11, 0.8);
       border-color: rgba(255,255,255,0.1);
     }
+    .processing-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .processing-overlay.active {
+      display: flex;
+    }
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 
   <!-- Fonts -->
@@ -61,6 +88,14 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
+  <!-- Processing Overlay -->
+  <div class="processing-overlay" id="processing-overlay">
+    <div style="text-align: center; color: white;">
+      <div class="spinner"></div>
+      <p style="margin-top: 20px;">Processing with OpenCV...</p>
+    </div>
+  </div>
+
   <!-- Navbar -->
   <nav class="navbar">
     <div class="logo-title">
@@ -78,8 +113,8 @@
 
   <!-- Main -->
   <main class="filters-page">
-    <h1 class="page-title">Filters</h1>
-    <p class="subtitle">Upload an image and experiment with real-time adjustments or preset styles.</p>
+    <h1 class="page-title">OpenCV Filters</h1>
+    <p class="subtitle">Upload an image and apply real-time OpenCV filters processed server-side.</p>
 
     <!-- Upload -->
     <div class="upload-section">
@@ -102,27 +137,33 @@
 
       <!-- Right: Controls -->
       <section class="controls">
-        <h3>Adjust Filters</h3>
+        <h3>Adjust Filters (OpenCV)</h3>
 
         <div class="slider-group">
-          <label>Brightness</label>
+          <label>Brightness: <span id="brightness-val">100</span></label>
           <input type="range" id="brightness" min="0" max="200" value="100">
         </div>
 
         <div class="slider-group">
-          <label>Contrast</label>
+          <label>Contrast: <span id="contrast-val">100</span></label>
           <input type="range" id="contrast" min="0" max="200" value="100">
         </div>
 
         <div class="slider-group">
-          <label>Sepia</label>
+          <label>Sepia: <span id="sepia-val">0</span></label>
           <input type="range" id="sepia" min="0" max="100" value="0">
         </div>
 
         <div class="slider-group">
-          <label>Blur</label>
+          <label>Blur: <span id="blur-val">0</span></label>
           <input type="range" id="blur" min="0" max="10" value="0">
         </div>
+
+        <button type="button" id="apply-sliders-btn" class="btn secondary">
+          <i class="fa-solid fa-magic"></i> Apply Adjustments
+        </button>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
 
         <div class="dropdown-group">
           <label for="preset-filters">Preset Filters</label>
@@ -132,15 +173,24 @@
             <option value="sepia">Sepia</option>
             <option value="invert">Invert</option>
             <option value="cool">Cool Tone</option>
+            <option value="warm">Warm Tone</option>
             <option value="vibrant">Vibrant</option>
+            <option value="cartoon">Cartoon</option>
+            <option value="sketch">Sketch</option>
+            <option value="edge_detection">Edge Detection</option>
+            <option value="oil_painting">Oil Painting</option>
+            <option value="sharpen">Sharpen</option>
+            <option value="emboss">Emboss</option>
+            <option value="vintage">Vintage</option>
           </select>
         </div>
+
         <div class="actions">
           <button type="button" id="reset-btn" class="btn secondary">
             <i class="fa-solid fa-rotate-left"></i> Reset
           </button>
-          <button type="button" id="save-btn" class="btn primary">
-            <i class="fa-solid fa-floppy-disk"></i> Save Final
+          <button type="button" id="download-btn" class="btn primary">
+            <i class="fa-solid fa-download"></i> Download
           </button>
         </div>
       </section>
@@ -149,6 +199,192 @@
 
   </main>
 
-  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    // Theme toggle
+    const toggleBtn = document.getElementById("theme-toggle");
+    const body = document.body;
+    const html = document.documentElement;
+
+    if (toggleBtn) {
+      const savedTheme = localStorage.getItem("theme") || "light";
+      body.className = savedTheme;
+      html.className = savedTheme;
+      
+      const icon = toggleBtn.querySelector("i");
+      if (savedTheme === "dark") {
+        icon.classList.remove("fa-moon");
+        icon.classList.add("fa-sun");
+      }
+      
+      toggleBtn.addEventListener("click", () => {
+        body.classList.toggle("dark");
+        body.classList.toggle("light");
+        html.classList.toggle("dark");
+        html.classList.toggle("light");
+        
+        const icon = toggleBtn.querySelector("i");
+        if (body.classList.contains("dark")) {
+          icon.classList.remove("fa-moon");
+          icon.classList.add("fa-sun");
+          localStorage.setItem("theme", "dark");
+        } else {
+          icon.classList.remove("fa-sun");
+          icon.classList.add("fa-moon");
+          localStorage.setItem("theme", "light");
+        }
+      });
+    }
+
+    // Filter page logic
+    const fileUpload = document.getElementById("file-upload");
+    const uploadBox = document.getElementById("upload-box");
+    const preview = document.getElementById("preview");
+    const previewImg = document.getElementById("preview-img");
+    const fileName = document.getElementById("file-name");
+    const processingOverlay = document.getElementById("processing-overlay");
+
+    const brightnessSlider = document.getElementById("brightness");
+    const contrastSlider = document.getElementById("contrast");
+    const sepiaSlider = document.getElementById("sepia");
+    const blurSlider = document.getElementById("blur");
+    const presetSelect = document.getElementById("preset-filters");
+    const applySlidersBtn = document.getElementById("apply-sliders-btn");
+    const resetBtn = document.getElementById("reset-btn");
+    const downloadBtn = document.getElementById("download-btn");
+
+    // Value display updates
+    brightnessSlider.addEventListener("input", (e) => {
+      document.getElementById("brightness-val").textContent = e.target.value;
+    });
+    contrastSlider.addEventListener("input", (e) => {
+      document.getElementById("contrast-val").textContent = e.target.value;
+    });
+    sepiaSlider.addEventListener("input", (e) => {
+      document.getElementById("sepia-val").textContent = e.target.value;
+    });
+    blurSlider.addEventListener("input", (e) => {
+      document.getElementById("blur-val").textContent = e.target.value;
+    });
+
+    let originalImageSrc = null;
+    let currentProcessedUrl = null;
+
+    // File upload handler
+    fileUpload.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 10 * 1024 * 1024) {
+        alert("File too large! Maximum size is 10MB.");
+        return;
+      }
+
+      if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
+        alert("Invalid file type! Please upload PNG, JPG, or JPEG.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        originalImageSrc = e.target.result;
+        previewImg.src = originalImageSrc;
+        fileName.textContent = file.name;
+        uploadBox.style.display = "none";
+        preview.classList.remove("hidden");
+        resetSliders();
+        currentProcessedUrl = null;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Apply slider adjustments
+    applySlidersBtn.addEventListener("click", async () => {
+      if (!originalImageSrc) return;
+
+      const brightness = brightnessSlider.value;
+      const contrast = contrastSlider.value;
+      const sepia = sepiaSlider.value;
+      const blur = blurSlider.value;
+
+      await applyFilter("adjustable", { brightness, contrast, sepia, blur });
+    });
+
+    // Preset filter handler
+    presetSelect.addEventListener("change", async (e) => {
+      const filterType = e.target.value;
+      if (filterType === "none") {
+        previewImg.src = originalImageSrc;
+        currentProcessedUrl = null;
+        return;
+      }
+      await applyFilter(filterType);
+    });
+
+    // Apply filter function
+    async function applyFilter(filterType, params = {}) {
+      if (!originalImageSrc) return;
+
+      processingOverlay.classList.add("active");
+
+      try {
+        const response = await fetch("/filters/apply", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            image: originalImageSrc,
+            filter: filterType,
+            ...params
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          currentProcessedUrl = data.url;
+          previewImg.src = data.url + "?t=" + Date.now();
+        } else {
+          alert("Error applying filter: " + data.error);
+        }
+      } catch (error) {
+        alert("Error: " + error.message);
+      } finally {
+        processingOverlay.classList.remove("active");
+      }
+    }
+
+    // Reset button
+    resetBtn.addEventListener("click", () => {
+      resetSliders();
+      presetSelect.value = "none";
+      if (originalImageSrc) {
+        previewImg.src = originalImageSrc;
+        currentProcessedUrl = null;
+      }
+    });
+
+    // Download button
+    downloadBtn.addEventListener("click", () => {
+      const imgSrc = currentProcessedUrl || originalImageSrc;
+      if (!imgSrc) return;
+
+      const a = document.createElement("a");
+      a.href = imgSrc;
+      a.download = "filtered_" + (fileName.textContent || "image.jpg");
+      a.click();
+    });
+
+    function resetSliders() {
+      brightnessSlider.value = 100;
+      contrastSlider.value = 100;
+      sepiaSlider.value = 0;
+      blurSlider.value = 0;
+      document.getElementById("brightness-val").textContent = "100";
+      document.getElementById("contrast-val").textContent = "100";
+      document.getElementById("sepia-val").textContent = "0";
+      document.getElementById("blur-val").textContent = "0";
+    }
+  </script>
 </body>
 </html>

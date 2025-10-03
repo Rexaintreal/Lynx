@@ -81,7 +81,6 @@ def face_recognition():
 def uploaded_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
-
 @app.route("/filters", methods=["GET"])
 def filters():
     return render_template("filters.html", filename=None)
@@ -97,6 +96,12 @@ def apply_filter_route():
         img_data = data["image"].split(",")[1]
         filter_type = data.get("filter", "none")
         
+        # Get slider values for adjustable filter
+        brightness = data.get("brightness", 100)
+        contrast = data.get("contrast", 100)
+        sepia = data.get("sepia", 0)
+        blur = data.get("blur", 0)
+        
         # Generate unique filename with timestamp
         timestamp = str(int(time.time() * 1000))
         filename = f"filtered_{filter_type}_{timestamp}.jpg"
@@ -109,7 +114,17 @@ def apply_filter_route():
         # Apply filter via OpenCV
         output_filename = f"processed_{filename}"
         output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
-        apply_filter(filepath, output_path, filter_type)
+        
+        # If preset filter selected, use that
+        if filter_type != "adjustable":
+            apply_filter(filepath, output_path, filter_type)
+        else:
+            # Use adjustable filter with slider values
+            apply_filter(filepath, output_path, "adjustable",
+                        brightness=int(brightness),
+                        contrast=int(contrast),
+                        sepia=int(sepia),
+                        blur=int(blur))
         
         # Return URL to processed image
         return jsonify({
@@ -119,11 +134,12 @@ def apply_filter_route():
         
     except Exception as e:
         print(f"Error applying filter: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
-
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
