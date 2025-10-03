@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Object Detection - Detect and count objects using OpenCV YOLO" />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Object Detection</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <!-- Theme initialization -->
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+
+  <!-- Prevent flash -->
+  <style>
+    html { margin: 0; padding: 0; }
+    html.light { background: #FAFAFA !important; color: #18181B !important; }
+    html.dark { background: #09090B !important; color: #F4F4F5 !important; }
+    body { margin: 0; }
+    body.light { background: #FAFAFA; color: #18181B; }
+    body.dark { background: #09090B; color: #F4F4F5; }
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar, html.dark .navbar {
+      background: rgba(9, 9, 11, 0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+  </style>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('face_detection') }}">Face Detection</a>
+      <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+      <a href="{{ url_for('filters') }}">Filters</a>
+      <a href="{{ url_for('object_detection') }}" aria-current="page">Object Detection</a>
+      <button id="theme-toggle" class="theme-btn"><i class="fa-solid fa-moon"></i></button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="face-detection">
+    <h1>Object Detection</h1>
+    <p class="subtitle">Upload an image to detect and count common objects using OpenCV YOLOv4.</p>
+
+   <!-- Upload Form -->
+    {% if not filename %}
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('object_detection') }}">
+    <label class="upload-box" for="file-upload" id="upload-box">
+        <i class="fa-solid fa-camera"></i>
+        <span id="upload-text">Click to upload image</span>
+        <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+        <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
+    </label>
+
+    <!-- Preview -->
+    <div id="preview" class="preview hidden">
+        <img id="preview-img" src="" alt="Preview">
+        <p id="file-name" class="file-name"></p>
+    </div>
+
+    <button type="submit" id="process-btn" class="btn primary hidden">
+        <i class="fa-solid fa-magnifying-glass"></i> Detect Objects
+    </button>
+    </form>
+    {% endif %}
+
+
+    <!-- Results -->
+    {% if filename %}
+    <div class="result">
+    <h3>Detection Results</h3>
+    <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Detected Objects">
+
+    <div class="detection-stats">
+        <h4><i class="fa-solid fa-chart-simple"></i> Summary</h4>
+        <p><strong>Total Objects Detected:</strong> {{ total_objects }}</p>
+
+        {% if object_counts %}
+        <h4><i class="fa-solid fa-list"></i> Objects by Type</h4>
+        <ul class="object-list">
+        {% for obj, count in object_counts.items() %}
+        <li>
+            <span class="object-name">{{ obj.title() }}</span>
+            <span class="object-count">{{ count }}</span>
+        </li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if detections %}
+        <h4><i class="fa-solid fa-bullseye"></i> Individual Detections</h4>
+        <div class="detections-grid">
+        {% for det in detections %}
+        <div class="detection-card">
+            <span class="detection-label">{{ det.label.title() }}</span>
+            <span class="detection-confidence">{{ det.confidence }}%</span>
+        </div>
+        {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="actions">
+        <a href="{{ url_for('object_detection') }}" class="btn secondary">
+        <i class="fa-solid fa-arrow-left"></i> Detect Another
+        </a>
+        <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary">
+        <i class="fa-solid fa-download"></i> Download Result
+        </a>
+    </div>
+    </div>
+    {% endif %}
+
+    
+  </main>
+
+  <footer class="footer">Built with OpenCV & Flask</footer>
+
+  <!-- JS -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

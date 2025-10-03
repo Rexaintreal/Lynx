@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from models.face_detection import detect_faces
 from models.face_recognition import recognize_faces
 from models.filters import apply_filter
+from models.object_detection import detect_objects
 import base64
 import time
 
@@ -66,7 +67,7 @@ def face_recognition():
             output_filename = "recog_" + filename
             output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
 
-            # Run recognition (returns list of dicts with Age & Gender)
+            # Run recognition 
             people = recognize_faces(filepath, output_path)
 
             return render_template(
@@ -140,6 +141,68 @@ def apply_filter_route():
             "success": False,
             "error": str(e)
         }), 500
+
+@app.route("/object-detection", methods=["GET", "POST"])
+def object_detection():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "object_detection.html",
+                error="No file part in the request."
+            )
+
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "object_detection.html",
+                error="No file selected. Please upload an image."
+            )
+
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # Processed output filename
+            output_filename = "objects_" + filename
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                # Run object detection
+                results = detect_objects(filepath, output_path)
+
+                return render_template(
+                    "object_detection.html",
+                    filename=output_filename,
+                    total_objects=results['total_objects'],
+                    object_counts=results['object_counts'],
+                    detections=results['detections']
+                )
+
+            except FileNotFoundError as e:
+                # Missing YOLO files
+                return render_template(
+                    "object_detection.html",
+                    error=str(e)
+                )
+            except Exception as e:
+                print(f"Error during object detection: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "object_detection.html",
+                    error="An error occurred during object detection. Please try again."
+                )
+        else:
+            return render_template(
+                "object_detection.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+
+    return render_template("object_detection.html")
+
+
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)

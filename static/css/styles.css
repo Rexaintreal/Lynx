@@ -843,3 +843,136 @@ body.dark .styled-select:focus {
     flex-direction: column;
   }
 }
+
+/* Detection Page CSS and Styling */  
+.detection-stats {
+  text-align: left;
+  margin-top: 2rem;
+}
+
+.detection-stats h4 {
+  margin: 1.5rem 0 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detection-stats h4 i {
+  color: var(--brand-accent);
+}
+
+.object-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.object-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+body.dark .object-list li {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.object-list li:hover {
+  background: rgba(82, 82, 91, 0.1);
+  transform: translateX(4px);
+}
+
+body.dark .object-list li:hover {
+  background: rgba(212, 212, 216, 0.1);
+}
+
+.object-name {
+  font-weight: 500;
+}
+
+.object-count {
+  background: var(--brand-accent);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+body.dark .object-count {
+  background: #F4F4F5;
+  color: #09090B;
+}
+
+/* Detections Grid */
+.detections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.detection-card {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+body.dark .detection-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.detection-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .detection-card:hover {
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+}
+
+.detection-label {
+  font-weight: 600;
+  color: #18181B;
+}
+
+body.dark .detection-label {
+  color: #F4F4F5;
+}
+
+.detection-confidence {
+  font-size: 0.85rem;
+  color: #71717A;
+}
+
+body.dark .detection-confidence {
+  color: #A1A1AA;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .detections-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  
+  .detection-card {
+    padding: 0.75rem;
+  }
+}
+form.hidden {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
