@@ -5,6 +5,7 @@ from models.face_detection import detect_faces
 from models.face_recognition import recognize_faces
 from models.filters import apply_filter
 from models.object_detection import detect_objects
+from models.scene_understanding import analyze_scene
 import base64
 import time
 
@@ -17,7 +18,7 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
 
 
-@app.route("/")
+@app.route("/") 
 def home():
     return render_template("index.html")
 
@@ -202,7 +203,69 @@ def object_detection():
 
     return render_template("object_detection.html")
 
+@app.route("/scene-understanding", methods=["GET", "POST"])
+def scene_understanding():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "scene_understanding.html",
+                error="No file part in the request."
+            )
 
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "scene_understanding.html",
+                error="No file selected. Please upload an image."
+            )
+
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # Processed output filename
+            output_filename = "scene_" + filename
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+            
+
+            try:
+                # Run scene analysis
+                results = analyze_scene(filepath, output_path)
+
+                return render_template(
+                    "scene_understanding.html",
+                    filename=output_filename,
+                    scene_type=results['scene_type'],
+                    scene_confidence=results['scene_confidence'],
+                    total_objects=results['total_objects'],
+                    object_counts=results['object_counts'],
+                    detections=results['detections'],
+                    spatial_distribution=results['spatial_distribution'],
+                    scene_analysis=results['scene_analysis']
+                )
+
+            except FileNotFoundError as e:
+                return render_template(
+                    "scene_understanding.html",
+                    error=str(e)
+                )
+            except Exception as e:
+                print(f"Error during scene analysis: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "scene_understanding.html",
+                    error="An error occurred during scene analysis. Please try again."
+                )
+        else:
+            return render_template(
+                "scene_understanding.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+
+    return render_template("scene_understanding.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)

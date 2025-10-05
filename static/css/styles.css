@@ -976,3 +976,250 @@ form.hidden {
   opacity: 0;
   transition: opacity 0.3s ease-in-out;
 }
+/* Scene Understanding Specific Styles */
+/* Add these to the end of your existing styles.css file */
+
+/* Scene Classification Card */
+.scene-classification {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark .scene-classification {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.scene-type-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scene-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.scene-badge.outdoor {
+  background: linear-gradient(135deg, #2e7d32, #43a047);
+  color: white;
+}
+
+.scene-badge.indoor {
+  background: linear-gradient(135deg, #9e5a23, #bf6e2e);
+  color: white;
+}
+
+.scene-badge i {
+  font-size: 1.3rem;
+}
+
+/* Confidence Bar */
+.confidence-bar {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+body.dark .confidence-bar {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.confidence-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 8px;
+  transition: width 0.8s ease;
+}
+
+.confidence-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 600;
+  color: #18181B;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+body.dark .confidence-text {
+  color: #F4F4F5;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Spatial Distribution Grid */
+.spatial-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  max-width: 500px;
+}
+
+.spatial-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.spatial-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+body.dark .spatial-cell {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.spatial-cell:hover {
+  background: rgba(82, 82, 91, 0.1);
+  transform: translateY(-2px);
+}
+
+body.dark .spatial-cell:hover {
+  background: rgba(212, 212, 216, 0.1);
+}
+
+.spatial-label {
+  font-size: 0.75rem;
+  color: #71717A;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+body.dark .spatial-label {
+  color: #A1A1AA;
+}
+
+.spatial-count {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+body.dark .spatial-count {
+  color: #059669;
+}
+
+/* Scene Analysis Details */
+.analysis-details {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.analysis-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark .analysis-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.analysis-label {
+  font-weight: 500;
+  color: #18181B;
+}
+
+body.dark .analysis-label {
+  color: #F4F4F5;
+}
+
+.analysis-value {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.analysis-value.positive {
+  color: #10b981;
+}
+
+body.dark .analysis-value.positive {
+  color: #34d399;
+}
+
+.analysis-value.negative {
+  color: #ef4444;
+}
+
+body.dark .analysis-value.negative {
+  color: #f87171;
+}
+
+/* Enhanced Detection Stats for Scene Understanding */
+.detection-stats h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.5rem 0 1rem 0;
+  font-size: 1.1rem;
+  color: #18181B;
+}
+
+body.dark .detection-stats h4 {
+  color: #F4F4F5;
+}
+
+.detection-stats h4 i {
+  color: var(--brand-accent);
+}
+
+/* Responsive Design for Scene Understanding */
+@media (max-width: 768px) {
+  .spatial-grid {
+    max-width: 100%;
+  }
+  
+  .spatial-cell {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .spatial-label {
+    font-size: 0.65rem;
+  }
+  
+  .spatial-count {
+    font-size: 1.25rem;
+  }
+  
+  .scene-badge {
+    font-size: 1rem;
+    padding: 0.75rem 1.25rem;
+  }
+  
+  .analysis-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
