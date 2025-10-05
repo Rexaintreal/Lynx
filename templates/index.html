@@ -20,10 +20,8 @@
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const theme = savedTheme || (prefersDark ? "dark" : "light");
     
-    // Apply theme to html element 
     document.documentElement.classList.add(theme);
     
-    // Also apply background color directly via style attribute
     if (theme === "dark") {
       document.documentElement.style.background = "#09090B";
       document.documentElement.style.color = "#F4F4F5";
@@ -34,9 +32,7 @@
   })();
   </script>
   
-  <!-- Inline critical CSS to prevent flash -->
   <style>
-    /* Apply immediately to html root */
     html {
       margin: 0;
       padding: 0;
@@ -61,7 +57,6 @@
       color: #F4F4F5;
     }
     
-    /* Navbar - prevent flash */
     .navbar {
       background: rgba(255, 255, 255, 0.8);
       border-bottom: 1px solid rgba(0,0,0,0.1);
@@ -73,13 +68,8 @@
     }
   </style>
 
-  <!-- Inter Font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
@@ -95,6 +85,7 @@
       <a href="{{ url_for('filters') }}">Filters</a>
       <a href="{{ url_for('object_detection') }}">Object Detection</a>
       <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+      <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
     </div>
   </nav>
@@ -138,12 +129,17 @@
         <h3>Scene Understanding</h3>
         <p>Classify scenes and analyze spatial distribution.</p>
       </div>
+
+      <div class="feature">
+        <i class="fa-solid fa-palette"></i>
+        <h3>Color Analysis</h3>
+        <p>Extract dominant colors and analyze palettes.</p>
+      </div>
     </section>
   </main>
 
   <footer class="footer">Built with OpenCV & Flask</footer>
 
-  <!-- JS -->
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

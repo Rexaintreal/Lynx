@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Color Analysis - Extract dominant colors and analyze color palettes" />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Color Analysis</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <!-- Theme initialization -->
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+
+  <!-- Prevent flash -->
+  <style>
+    html { margin: 0; padding: 0; }
+    html.light { background: #FAFAFA !important; color: #18181B !important; }
+    html.dark { background: #09090B !important; color: #F4F4F5 !important; }
+    body { margin: 0; }
+    body.light { background: #FAFAFA; color: #18181B; }
+    body.dark { background: #09090B; color: #F4F4F5; }
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar, html.dark .navbar {
+      background: rgba(9, 9, 11, 0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+  </style>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('face_detection') }}">Face Detection</a>
+      <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+      <a href="{{ url_for('filters') }}">Filters</a>
+      <a href="{{ url_for('object_detection') }}">Object Detection</a>
+      <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+      <a href="{{ url_for('color_analysis') }}" aria-current="page">Color Analysis</a>
+      <button id="theme-toggle" class="theme-btn"><i class="fa-solid fa-moon"></i></button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="face-detection">
+    <h1>Color Analysis</h1>
+    <p class="subtitle">Upload an image to extract dominant colors, analyze color palettes, and view detailed color breakdowns.</p>
+
+   <!-- Upload Form -->
+    {% if not filename %}
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('color_analysis') }}">
+    <label class="upload-box" for="file-upload" id="upload-box">
+        <i class="fa-solid fa-palette"></i>
+        <span id="upload-text">Click to upload image</span>
+        <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+        <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
+    </label>
+
+    <!-- Preview -->
+    <div id="preview" class="preview hidden">
+        <img id="preview-img" src="" alt="Preview">
+        <p id="file-name" class="file-name"></p>
+    </div>
+
+    <button type="submit" id="process-btn" class="btn primary hidden">
+        <i class="fa-solid fa-droplet"></i> Analyze Colors
+    </button>
+    </form>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p class="loading-text">Analyzing colors...</p>
+        <p class="loading-subtext">This may take a few moments</p>
+      </div>
+    </div>
+    {% endif %}
+
+
+    <!-- Results -->
+    {% if filename %}
+    <div class="result">
+    <h3>Color Analysis Results</h3>
+    <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Color Analysis">
+
+    <!-- Color Overview -->
+    <div class="color-overview">
+        <h4><i class="fa-solid fa-circle-half-stroke"></i> Color Overview</h4>
+        <div class="overview-grid">
+        <div class="overview-item">
+            <span class="overview-label">Color Mood</span>
+            <span class="overview-value">{{ color_mood }}</span>
+        </div>
+        <div class="overview-item">
+            <span class="overview-label">Temperature</span>
+            <span class="overview-value">{{ color_temperature }}</span>
+        </div>
+        <div class="overview-item">
+            <span class="overview-label">Image Size</span>
+            <span class="overview-value">{{ dimensions.width }}x{{ dimensions.height }}</span>
+        </div>
+        <div class="overview-item">
+            <span class="overview-label">Total Pixels</span>
+            <span class="overview-value">{{ "{:,}".format(dimensions.total_pixels) }}</span>
+        </div>
+        </div>
+    </div>
+
+    <!-- Dominant Colors -->
+    <div class="color-palette-section">
+        <h4><i class="fa-solid fa-swatchbook"></i> Dominant Color Palette</h4>
+        <p class="section-desc">Top 10 most prominent colors in the image</p>
+        
+        <div class="color-palette-grid">
+        {% for color in color_palette %}
+        <div class="color-card">
+            <div class="color-swatch" style="background-color: {{ color.hex }};"></div>
+            <div class="color-info">
+            <div class="color-hex">{{ color.hex }}</div>
+            <div class="color-rgb">RGB({{ color.rgb[0] }}, {{ color.rgb[1] }}, {{ color.rgb[2] }})</div>
+            <div class="color-percentage">{{ color.percentage }}%</div>
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+    </div>
+
+    <!-- HSV Analysis -->
+    <div class="hsv-analysis">
+        <h4><i class="fa-solid fa-chart-pie"></i> HSV Color Properties</h4>
+        <div class="hsv-grid">
+        <div class="hsv-item">
+            <span class="hsv-label">Average Hue</span>
+            <div class="hsv-bar">
+            <div class="hsv-fill hue-bar" style="width: {{ (avg_hue / 180) * 100 }}%;"></div>
+            </div>
+            <span class="hsv-value">{{ avg_hue }}°</span>
+        </div>
+        <div class="hsv-item">
+            <span class="hsv-label">Average Saturation</span>
+            <div class="hsv-bar">
+            <div class="hsv-fill saturation-bar" style="width: {{ (avg_saturation / 255) * 100 }}%;"></div>
+            </div>
+            <span class="hsv-value">{{ avg_saturation }}</span>
+        </div>
+        <div class="hsv-item">
+            <span class="hsv-label">Average Brightness</span>
+            <div class="hsv-bar">
+            <div class="hsv-fill value-bar" style="width: {{ (avg_value / 255) * 100 }}%;"></div>
+            </div>
+            <span class="hsv-value">{{ avg_value }}</span>
+        </div>
+        </div>
+    </div>
+
+    <!-- Color Histogram -->
+    <div class="histogram-section">
+        <h4><i class="fa-solid fa-chart-column"></i> RGB Color Histogram</h4>
+        <p class="section-desc">Distribution of red, green, and blue values across the image</p>
+        <canvas id="histogramChart" width="800" height="300"></canvas>
+    </div>
+
+    <div class="actions">
+        <a href="{{ url_for('color_analysis') }}" class="btn secondary">
+        <i class="fa-solid fa-arrow-left"></i> Analyze Another
+        </a>
+        <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary">
+        <i class="fa-solid fa-download"></i> Download Result
+        </a>
+    </div>
+    </div>
+
+    <!-- Pass histogram data to JavaScript -->
+    {% if histograms %}
+    <script>
+      window.histogramData = {
+        red: {{ histograms.red | tojson }},
+        green: {{ histograms.green | tojson }},
+        blue: {{ histograms.blue | tojson }}
+      };
+    </script>
+    {% endif %}
+
+    {% endif %}
+  </main>
+
+  <footer class="footer">Built with OpenCV & Flask</footer>
+
+  <!-- Chart.js for histogram -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  
+  <!-- JS -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  
+  <!-- Show loading overlay on form submit -->
+  <script>
+    const form = document.querySelector('form');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    
+    if (form && loadingOverlay) {
+      form.addEventListener('submit', function(e) {
+        // Show loading overlay
+        loadingOverlay.classList.remove('hidden');
+      });
+    }
+  </script>
+  
+  <!-- Histogram rendering -->
+  {% if histograms %}
+  <script>
+    const ctx = document.getElementById('histogramChart').getContext('2d');
+    const labels = Array.from({length: 256}, (_, i) => i);
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Red',
+            data: window.histogramData.red,
+            borderColor: 'rgb(239, 68, 68)',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: true
+          },
+          {
+            label: 'Green',
+            data: window.histogramData.green,
+            borderColor: 'rgb(34, 197, 94)',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: true
+          },
+          {
+            label: 'Blue',
+            data: window.histogramData.blue,
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              color: document.body.classList.contains('dark') ? '#F4F4F5' : '#18181B',
+              font: {
+                family: 'Inter',
+                size: 12
+              }
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Pixel Value (0-255)',
+              color: document.body.classList.contains('dark') ? '#F4F4F5' : '#18181B'
+            },
+            ticks: {
+              color: document.body.classList.contains('dark') ? '#A1A1AA' : '#71717A'
+            },
+            grid: {
+              color: document.body.classList.contains('dark') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Frequency (%)',
+              color: document.body.classList.contains('dark') ? '#F4F4F5' : '#18181B'
+            },
+            ticks: {
+              color: document.body.classList.contains('dark') ? '#A1A1AA' : '#71717A'
+            },
+            grid: {
+              color: document.body.classList.contains('dark') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+            }
+          }
+        }
+      }
+    });
+  </script>
+  {% endif %}
+</body>
+</html>

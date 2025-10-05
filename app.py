@@ -6,6 +6,7 @@ from models.face_recognition import recognize_faces
 from models.filters import apply_filter
 from models.object_detection import detect_objects
 from models.scene_understanding import analyze_scene
+from models.color_analysis import analyze_colors
 import base64
 import time
 
@@ -266,6 +267,66 @@ def scene_understanding():
             )
 
     return render_template("scene_understanding.html")
+
+
+@app.route("/color-analysis", methods=["GET", "POST"])
+def color_analysis():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "color_analysis.html",
+                error="No file part in the request."
+            )
+
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "color_analysis.html",
+                error="No file selected. Please upload an image."
+            )
+
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # Processed output filename
+            output_filename = "color_" + filename
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                # Run color analysis
+                results = analyze_colors(filepath, output_path)
+
+                return render_template(
+                    "color_analysis.html",
+                    filename=output_filename,
+                    color_palette=results['color_palette'],
+                    color_mood=results['color_mood'],
+                    color_temperature=results['color_temperature'],
+                    avg_hue=results['avg_hue'],
+                    avg_saturation=results['avg_saturation'],
+                    avg_value=results['avg_value'],
+                    histograms=results['histograms'],
+                    dimensions=results['dimensions']
+                )
+
+            except Exception as e:
+                print(f"Error during color analysis: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "color_analysis.html",
+                    error="An error occurred during color analysis. Please try again."
+                )
+        else:
+            return render_template(
+                "color_analysis.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+
+    return render_template("color_analysis.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)

@@ -977,8 +977,6 @@ form.hidden {
   transition: opacity 0.3s ease-in-out;
 }
 /* Scene Understanding Specific Styles */
-/* Add these to the end of your existing styles.css file */
-
 /* Scene Classification Card */
 .scene-classification {
   margin: 2rem 0;
@@ -1176,7 +1174,6 @@ body.dark .analysis-value.negative {
   color: #f87171;
 }
 
-/* Enhanced Detection Stats for Scene Understanding */
 .detection-stats h4 {
   display: flex;
   align-items: center;
@@ -1221,5 +1218,340 @@ body.dark .detection-stats h4 {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+}
+/* Color Analysis Styles */
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(9, 9, 11, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+}
+
+body.light .loading-overlay {
+  background: rgba(250, 250, 250, 0.95);
+}
+
+.loading-overlay.hidden {
+  display: none;
+}
+
+.loading-spinner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--brand-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+body.light .spinner {
+  border-color: rgba(0, 0, 0, 0.1);
+  border-top-color: var(--brand-accent);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #F4F4F5;
+  margin: 0;
+}
+
+body.light .loading-text {
+  color: #18181B;
+}
+
+.loading-subtext {
+  font-size: 1rem;
+  color: #A1A1AA;
+  margin: 0;
+}
+
+body.light .loading-subtext {
+  color: #71717A;
+}
+
+/* Color Overview */
+.color-overview {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark .color-overview {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.overview-item {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark .overview-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.overview-label {
+  font-size: 0.85rem;
+  color: #71717A;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+body.dark .overview-label {
+  color: #A1A1AA;
+}
+
+.overview-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #18181B;
+}
+
+body.dark .overview-value {
+  color: #F4F4F5;
+}
+
+/* Color Palette Section */
+.color-palette-section {
+  margin: 2rem 0;
+}
+
+.section-desc {
+  color: #71717A;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+body.dark .section-desc {
+  color: #A1A1AA;
+}
+
+.color-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.color-card {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+body.dark .color-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.color-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+body.dark .color-card:hover {
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.1);
+}
+
+.color-swatch {
+  width: 100%;
+  height: 100px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark .color-swatch {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.color-info {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.color-hex {
+  font-weight: 700;
+  font-size: 1rem;
+  font-family: 'Courier New', monospace;
+  color: #18181B;
+}
+
+body.dark .color-hex {
+  color: #F4F4F5;
+}
+
+.color-rgb {
+  font-size: 0.8rem;
+  color: #71717A;
+  font-family: 'Courier New', monospace;
+}
+
+body.dark .color-rgb {
+  color: #A1A1AA;
+}
+
+.color-percentage {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--brand-accent);
+  margin-top: 0.25rem;
+}
+
+/* HSV Analysis */
+.hsv-analysis {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark .hsv-analysis {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.hsv-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.hsv-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hsv-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #18181B;
+}
+
+body.dark .hsv-label {
+  color: #F4F4F5;
+}
+
+.hsv-bar {
+  width: 100%;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+body.dark .hsv-bar {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.hsv-fill {
+  height: 100%;
+  transition: width 0.8s ease;
+  border-radius: 8px;
+}
+
+.hue-bar {
+  background: linear-gradient(90deg, 
+    #ff0000 0%, 
+    #ffff00 17%, 
+    #00ff00 33%, 
+    #00ffff 50%, 
+    #0000ff 67%, 
+    #ff00ff 83%, 
+    #ff0000 100%
+  );
+}
+
+.saturation-bar {
+  background: linear-gradient(90deg, #808080, #ff0000);
+}
+
+.value-bar {
+  background: linear-gradient(90deg, #000000, #ffffff);
+}
+
+.hsv-value {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--brand-accent);
+}
+
+/* Histogram Section */
+.histogram-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark .histogram-section {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+#histogramChart {
+  margin-top: 1.5rem;
+  max-width: 100%;
+  height: auto !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .color-palette-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+  
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .color-swatch {
+    height: 80px;
   }
 }
