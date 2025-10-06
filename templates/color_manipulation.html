@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Color Manipulation - Change colors, adjust saturation, and shift hues" />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Color Manipulation</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <!-- Theme initialization -->
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+
+  <!-- Prevent flash -->
+  <style>
+    html { margin: 0; padding: 0; }
+    html.light { background: #FAFAFA !important; color: #18181B !important; }
+    html.dark { background: #09090B !important; color: #F4F4F5 !important; }
+    body { margin: 0; }
+  </style>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('face_detection') }}">Face Detection</a>
+      <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+      <a href="{{ url_for('filters') }}">Filters</a>
+      <a href="{{ url_for('object_detection') }}">Object Detection</a>
+      <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+      <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+      <a href="{{ url_for('color_manipulation') }}" aria-current="page">Color Manipulation</a>
+      <button id="theme-toggle" class="theme-btn"><i class="fa-solid fa-moon"></i></button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="face-detection">
+    <h1>Color Manipulation</h1>
+    <p class="subtitle">Upload an image and manipulate its colors — change backgrounds, swap hues, adjust saturation, and more.</p>
+
+    {% if not filename %}
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('color_manipulation') }}" id="upload-form">
+      
+      <!-- Side-by-side layout -->
+      <div class="manipulation-container">
+
+        <!-- Left: Upload + Preview -->
+        <div class="manipulation-left">
+          <label class="upload-box" for="file-upload" id="upload-box">
+            <i class="fa-solid fa-palette"></i>
+            <span id="upload-text">Click to upload image</span>
+            <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+            <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
+          </label>
+
+          <div id="preview" class="preview hidden">
+            <img id="preview-img" src="" alt="Preview">
+            <p id="file-name" class="file-name"></p>
+          </div>
+        </div>
+
+        <!-- Right: Operations & Controls -->
+        <div class="manipulation-right">
+          <div id="operation-selector" class="operation-selector hidden">
+            <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Choose Manipulation Type</h3>
+            <div class="operation-grid">
+              <div class="operation-card" data-operation="background">
+                <i class="fa-solid fa-fill-drip"></i>
+                <h4>Background Color</h4>
+                <p>Replace background with a new color</p>
+              </div>
+              <div class="operation-card" data-operation="replace">
+                <i class="fa-solid fa-exchange-alt"></i>
+                <h4>Color Replace</h4>
+                <p>Swap one color for another</p>
+              </div>
+              <div class="operation-card" data-operation="saturation">
+                <i class="fa-solid fa-adjust"></i>
+                <h4>Saturation</h4>
+                <p>Boost or reduce color intensity</p>
+              </div>
+              <div class="operation-card" data-operation="hue">
+                <i class="fa-solid fa-rainbow"></i>
+                <h4>Hue Shift</h4>
+                <p>Rotate overall color hue</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Individual control panels -->
+          <div id="background-controls" class="manipulation-controls hidden">
+            <h4><i class="fa-solid fa-fill-drip"></i> Background Color Settings</h4>
+            <div class="control-group">
+              <label for="bg-color">New Background Color</label>
+              <input type="color" id="bg-color" name="bg_color" value="#ffffff">
+            </div>
+            <div class="control-group">
+              <label for="bg-threshold">Detection Threshold: <span id="bg-threshold-value">50</span></label>
+              <input type="range" id="bg-threshold" name="bg_threshold" min="10" max="100" value="50">
+            </div>
+          </div>
+
+          <div id="replace-controls" class="manipulation-controls hidden">
+            <h4><i class="fa-solid fa-exchange-alt"></i> Color Replacement Settings</h4>
+            <div class="control-group">
+              <label for="source-color">Source Color</label>
+              <input type="color" id="source-color" name="source_color" value="#ff0000">
+            </div>
+            <div class="control-group">
+              <label for="target-color">Target Color</label>
+              <input type="color" id="target-color" name="target_color" value="#00ff00">
+            </div>
+            <div class="control-group">
+              <label for="tolerance">Tolerance: <span id="tolerance-value">30</span></label>
+              <input type="range" id="tolerance" name="tolerance" min="5" max="80" value="30">
+            </div>
+          </div>
+
+          <div id="saturation-controls" class="manipulation-controls hidden">
+            <h4><i class="fa-solid fa-adjust"></i> Saturation Settings</h4>
+            <div class="control-group">
+              <label for="saturation">Saturation Level: <span id="saturation-value">1.5</span>x</label>
+              <input type="range" id="saturation" name="saturation" min="0" max="3" step="0.1" value="1.5">
+              <div class="saturation-labels">
+                <span>Grayscale</span><span>Normal</span><span>Vibrant</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="hue-controls" class="manipulation-controls hidden">
+            <h4><i class="fa-solid fa-rainbow"></i> Hue Shift Settings</h4>
+            <div class="control-group">
+              <label for="hue-shift">Hue Shift: <span id="hue-shift-value">30</span>°</label>
+              <input type="range" id="hue-shift" name="hue_shift" min="-180" max="180" value="30">
+              <div class="hue-gradient"></div>
+            </div>
+          </div>
+
+          <button type="submit" id="process-btn" class="btn primary hidden">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Apply Manipulation
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p class="loading-text">Manipulating colors...</p>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if filename %}
+    <!-- Results section unchanged -->
+    <div class="result">
+      <h3>Color Manipulation Results</h3>
+      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Result">
+      <div class="actions">
+        <a href="{{ url_for('color_manipulation') }}" class="btn secondary">
+          <i class="fa-solid fa-arrow-left"></i> Manipulate Another
+        </a>
+        <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary">
+          <i class="fa-solid fa-download"></i> Download Result
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </main>
+
+  <footer class="footer">Built with OpenCV & Flask</footer>
+
+  <!-- JS -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const fileUpload = document.getElementById("file-upload");
+    const manipulationContainer = document.querySelector(".manipulation-container");
+    manipulationContainer.classList.add("initial");
+    const previewImg = document.getElementById("preview-img");
+    const preview = document.getElementById("preview");
+    const processBtn = document.getElementById("process-btn");
+    const operationCards = document.querySelectorAll(".operation-card");
+    const operationSelector = document.getElementById("operation-selector");
+    const loadingOverlay = document.getElementById("loading-overlay");
+
+    let selectedFile = null;
+    let selectedOperation = null;
+
+    fileUpload.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImg.src = e.target.result;
+          preview.classList.remove("hidden");
+          operationSelector.classList.remove("hidden");
+          document.getElementById("upload-text").textContent = "Change image";
+        };
+        manipulationContainer.classList.remove("initial");
+        manipulationContainer.classList.add("active");
+        reader.readAsDataURL(file);
+      }
+    });
+
+    operationCards.forEach(card => {
+      card.addEventListener("click", () => {
+        selectedOperation = card.dataset.operation;
+        document.querySelectorAll(".manipulation-controls").forEach(c => c.classList.add("hidden"));
+        document.querySelectorAll(".operation-card").forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        document.getElementById(`${selectedOperation}-controls`).classList.remove("hidden");
+        processBtn.classList.remove("hidden");
+      });
+    });
+
+    const form = document.getElementById("upload-form");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!selectedFile || !selectedOperation) {
+        alert("Please upload an image and select an operation first!");
+        return;
+      }
+      const formData = new FormData(form);
+      formData.append("operation", selectedOperation);
+      loadingOverlay.classList.remove("hidden");
+      try {
+        const response = await fetch("/color-manipulation", { method: "POST", body: formData });
+        if (!response.ok) throw new Error("Server error");
+        const responseText = await response.text();
+        document.open(); document.write(responseText); document.close();
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        loadingOverlay.classList.add("hidden");
+      }
+    });
+  });
+  </script>
+</body>
+</html>

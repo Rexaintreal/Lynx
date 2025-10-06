@@ -7,6 +7,7 @@ from models.filters import apply_filter
 from models.object_detection import detect_objects
 from models.scene_understanding import analyze_scene
 from models.color_analysis import analyze_colors
+from models.color_manipulation import apply_color_manipulation
 import base64
 import time
 
@@ -88,10 +89,8 @@ def uploaded_file(filename):
 def filters():
     return render_template("filters.html", filename=None)
 
-
 @app.route("/filters/apply", methods=["POST"])
 def apply_filter_route():
-    """Apply OpenCV filter to uploaded image"""
     try:
         data = request.get_json()
         
@@ -327,6 +326,86 @@ def color_analysis():
             )
 
     return render_template("color_analysis.html")
+
+@app.route("/color-manipulation", methods=["GET", "POST"])
+def color_manipulation():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "color_manipulation.html",
+                error="No file part in the request."
+            )
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "color_manipulation.html",
+                error="No file selected. Please upload on image."
+            )
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # get operation type
+            operation = request.form.get("operation", "saturation")
+
+            # Processed output filename
+            output_filename = f"manipulated_{operation}_{filename}"
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                # Prepare kwargs based on operation type
+                kwargs = {}
+
+                if operation == "background":
+                    # Parse hex color to RGB
+                    bg_color_hex = request.form.get("bg_color", "#ffffff")
+                    bg_color_rgb = tuple(int(bg_color_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+                    kwargs['target_color'] = bg_color_rgb
+                    kwargs['threshold'] = int(request.form.get("bg_threshold", 50))
+                elif operation == "replace":
+                    # Parse source and target colors
+                    source_hex = request.form.get("source_color", "#ff0000")
+                    target_hex = request.form.get("target_color", "#00ff00")
+                    source_rgb = tuple(int(source_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+                    target_rgb = tuple(int(target_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+                    kwargs['source_color'] = source_rgb
+                    kwargs['target_color'] = target_rgb
+                    kwargs['tolerance'] = int(request.form.get("tolerance", 30))
+                
+                elif operation == "saturation":
+                    kwargs['saturation_scale'] = float(request.form.get("saturation", 1.5))
+                
+                elif operation == "hue":
+                    kwargs['hue_shift'] = int(request.form.get("hue_shift", 30))
+                
+                # Run color manipulation
+                details = apply_color_manipulation(filepath, output_path, operation, **kwargs)
+                
+                return render_template(
+                    "color_manipulation.html",
+                    filename=output_filename,
+                    operation=operation,
+                    details=details
+                )
+
+            except Exception as e:
+                print(f"Error during color manipulation: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "color_manipulation.html",
+                    error="An error occurred during color manipulation. Please try again."
+                )
+            
+        else:
+            return render_template(
+                "color_manipulation.html",
+                error="Invalid file type. Please uplaod PNG, JPG, or JPEG."
+            )
+            
+    return render_template("color_manipulation.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
