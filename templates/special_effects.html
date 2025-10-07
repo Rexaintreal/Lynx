@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Special Effects - Green screen, color pop, duotone, and color isolation" />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Special Effects</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+
+  <style>
+    html { margin: 0; padding: 0; }
+    html.light { background: #FAFAFA !important; color: #18181B !important; }
+    html.dark { background: #09090B !important; color: #F4F4F5 !important; }
+    body { margin: 0; }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('face_detection') }}">Face Detection</a>
+      <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+      <a href="{{ url_for('filters') }}">Filters</a>
+      <a href="{{ url_for('object_detection') }}">Object Detection</a>
+      <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+      <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+      <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
+      <a href="{{ url_for('special_effects') }}" aria-current="page">Special Effects</a>
+      <button id="theme-toggle" class="theme-btn"><i class="fa-solid fa-moon"></i></button>
+    </div>
+  </nav>
+
+  <main class="face-detection">
+    <h1>Special Effects</h1>
+    <p class="subtitle">Transform your images with green screen replacement, color pop, duotone, and color isolation effects.</p>
+
+    {% if not filename %}
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('special_effects') }}" id="upload-form">
+      
+      <div class="manipulation-container">
+
+        <div class="manipulation-left">
+          <label class="upload-box" for="file-upload" id="upload-box">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span id="upload-text">Click to upload image</span>
+            <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+            <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
+          </label>
+
+          <div id="preview" class="preview hidden">
+            <img id="preview-img" src="" alt="Preview">
+            <p id="file-name" class="file-name"></p>
+          </div>
+        </div>
+
+        <div class="manipulation-right">
+          <div id="effect-selector" class="operation-selector hidden">
+            <h3><i class="fa-solid fa-magic"></i> Choose Special Effect</h3>
+            <div class="operation-grid">
+              <div class="operation-card" data-effect="greenscreen">
+                <i class="fa-solid fa-film"></i>
+                <h4>Green Screen</h4>
+                <p>Replace background color</p>
+              </div>
+              <div class="operation-card" data-effect="colorpop">
+                <i class="fa-solid fa-eye-dropper"></i>
+                <h4>Color Pop</h4>
+                <p>Keep one color vibrant</p>
+              </div>
+              <div class="operation-card" data-effect="duotone">
+                <i class="fa-solid fa-palette"></i>
+                <h4>Duotone</h4>
+                <p>Two-color gradient effect</p>
+              </div>
+              <div class="operation-card" data-effect="isolation">
+                <i class="fa-solid fa-filter"></i>
+                <h4>Color Isolation</h4>
+                <p>Isolate and enhance color</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="greenscreen-controls" class="manipulation-controls hidden">
+            <h4><i class="fa-solid fa-film"></i> Green Screen Settings</h4>
+            <div class="control-group">
+              <label for="screen-color">Screen Color to Remove</label>
+              <input type="color" id="screen-color" name="screen_color" value="#00ff00">
+            </div>
+            <div class="control-group">
+              <label for="new-bg-color">New Background Color</label>
+              <input type="color" id="new-bg-color" name="new_bg_color" value="#ffffff">
+            </div>
+            <div class="control-group">
+              <label for="gs-threshold">Detection Threshold: <span id="gs-threshold-value">40</span></label>
+              <input type="range" id="gs-threshold" name="gs_threshold" min="10" max="80" value="40">
+            </div>
+          </div>
+
+          <div id="colorpop-controls" class="manipulation-controls hidden">
+            <h4><i class="fa-solid fa-eye-dropper"></i> Color Pop Settings</h4>
+            <div class="control-group">
+              <label for="pop-color">Color to Keep</label>
+              <input type="color" id="pop-color" name="pop_color" value="#ff0000">
+            </div>
+            <div class="control-group">
+              <label for="pop-tolerance">Color Range: <span id="pop-tolerance-value">30</span></label>
+              <input type="range" id="pop-tolerance" name="pop_tolerance" min="10" max="80" value="30">
+            </div>
+          </div>
+
+          <div id="duotone-controls" class="manipulation-controls hidden">
+            <h4><i class="fa-solid fa-palette"></i> Duotone Settings</h4>
+            <div class="control-group">
+              <label for="shadow-color">Shadow Color (Darks)</label>
+              <input type="color" id="shadow-color" name="shadow_color" value="#00008b">
+            </div>
+            <div class="control-group">
+              <label for="highlight-color">Highlight Color (Lights)</label>
+              <input type="color" id="highlight-color" name="highlight_color" value="#ffd700">
+            </div>
+          </div>
+
+          <div id="isolation-controls" class="manipulation-controls hidden">
+            <h4><i class="fa-solid fa-filter"></i> Color Isolation Settings</h4>
+            <div class="control-group">
+              <label for="isolate-color">Color to Isolate</label>
+              <input type="color" id="isolate-color" name="isolate_color" value="#ff0000">
+            </div>
+            <div class="control-group">
+              <label for="iso-tolerance">Color Range: <span id="iso-tolerance-value">30</span></label>
+              <input type="range" id="iso-tolerance" name="iso_tolerance" min="10" max="80" value="30">
+            </div>
+            <div class="control-group">
+              <label for="desaturation">Background Desaturation: <span id="desaturation-value">0.3</span></label>
+              <input type="range" id="desaturation" name="desaturation" min="0" max="1" step="0.1" value="0.3">
+            </div>
+          </div>
+
+          <button type="submit" id="process-btn" class="btn primary hidden">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Apply Effect
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div id="loading-overlay" class="loading-overlay hidden">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p class="loading-text">Applying special effect...</p>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if filename %}
+    <div class="result">
+      <h3>Special Effect Results</h3>
+      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Result">
+      <div class="actions">
+        <a href="{{ url_for('special_effects') }}" class="btn secondary">
+          <i class="fa-solid fa-arrow-left"></i> Apply Another Effect
+        </a>
+        <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary">
+          <i class="fa-solid fa-download"></i> Download Result
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </main>
+
+  <footer class="footer">Built with OpenCV & Flask</footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const fileUpload = document.getElementById("file-upload");
+    const manipulationContainer = document.querySelector(".manipulation-container");
+    manipulationContainer.classList.add("initial");
+    const previewImg = document.getElementById("preview-img");
+    const preview = document.getElementById("preview");
+    const processBtn = document.getElementById("process-btn");
+    const effectCards = document.querySelectorAll(".operation-card");
+    const effectSelector = document.getElementById("effect-selector");
+    const loadingOverlay = document.getElementById("loading-overlay");
+
+    const rangeInputs = document.querySelectorAll('input[type="range"]');
+    rangeInputs.forEach(input => {
+      const valueSpan = document.getElementById(`${input.id}-value`);
+      if (valueSpan) {
+        input.addEventListener("input", (e) => {
+          valueSpan.textContent = e.target.value;
+        });
+      }
+    });
+
+    let selectedFile = null;
+    let selectedEffect = null;
+
+    fileUpload.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImg.src = e.target.result;
+          preview.classList.remove("hidden");
+          effectSelector.classList.remove("hidden");
+          document.getElementById("upload-text").textContent = "Change image";
+        };
+        manipulationContainer.classList.remove("initial");
+        manipulationContainer.classList.add("active");
+        reader.readAsDataURL(file);
+      }
+    });
+
+    effectCards.forEach(card => {
+      card.addEventListener("click", () => {
+        selectedEffect = card.dataset.effect;
+        document.querySelectorAll(".manipulation-controls").forEach(c => c.classList.add("hidden"));
+        document.querySelectorAll(".operation-card").forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        document.getElementById(`${selectedEffect}-controls`).classList.remove("hidden");
+        processBtn.classList.remove("hidden");
+      });
+    });
+
+    const form = document.getElementById("upload-form");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!selectedFile || !selectedEffect) {
+        alert("Please upload an image and select an effect first!");
+        return;
+      }
+      const formData = new FormData(form);
+      formData.append("effect", selectedEffect);
+      loadingOverlay.classList.remove("hidden");
+      try {
+        const response = await fetch("/special-effects", { method: "POST", body: formData });
+        if (!response.ok) throw new Error("Server error");
+        const responseText = await response.text();
+        document.open(); document.write(responseText); document.close();
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        loadingOverlay.classList.add("hidden");
+      }
+    });
+  });
+  </script>
+</body>
+</html>

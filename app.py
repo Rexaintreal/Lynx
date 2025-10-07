@@ -8,6 +8,7 @@ from models.object_detection import detect_objects
 from models.scene_understanding import analyze_scene
 from models.color_analysis import analyze_colors
 from models.color_manipulation import apply_color_manipulation
+from models.special_effects import apply_special_effect
 import base64
 import time
 
@@ -406,6 +407,90 @@ def color_manipulation():
             )
             
     return render_template("color_manipulation.html")
+
+@app.route("/special-effects", methods=["GET", "POST"])
+def special_effects():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "special_effects.html",
+                error="No file part in the request."
+            )
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "special_effects.html",
+                error="No file selected. Please upload an image."
+            )
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            effect = request.form.get("effect", "colorpop")
+
+            output_filename = f"effect_{effect}_{filename}"
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                kwargs = {}
+
+                if effect == "greenscreen":
+                    screen_hex = request.form.get("screen_color", "#00ff00")
+                    new_bg_hex = request.form.get("new_bg_color", "#ffffff")
+                    screen_rgb = tuple(int(screen_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+                    new_bg_rgb = tuple(int(new_bg_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+                    kwargs['bg_color'] = screen_rgb
+                    kwargs['new_bg_color'] = new_bg_rgb
+                    kwargs['threshold'] = int(request.form.get("gs_threshold", 40))
+                
+                elif effect == "colorpop":
+                    pop_hex = request.form.get("pop_color", "#ff0000")
+                    pop_rgb = tuple(int(pop_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+                    kwargs['keep_color'] = pop_rgb
+                    kwargs['tolerance'] = int(request.form.get("pop_tolerance", 30))
+                
+                elif effect == "duotone":
+                    shadow_hex = request.form.get("shadow_color", "#00008b")
+                    highlight_hex = request.form.get("highlight_color", "#ffd700")
+                    shadow_rgb = tuple(int(shadow_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+                    highlight_rgb = tuple(int(highlight_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+                    kwargs['shadow_color'] = shadow_rgb
+                    kwargs['highlight_color'] = highlight_rgb
+                
+                elif effect == "isolation":
+                    isolate_hex = request.form.get("isolate_color", "#ff0000")
+                    isolate_rgb = tuple(int(isolate_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+                    kwargs['isolate_color'] = isolate_rgb
+                    kwargs['tolerance'] = int(request.form.get("iso_tolerance", 30))
+                    kwargs['desaturation'] = float(request.form.get("desaturation", 0.3))
+                
+                details = apply_special_effect(filepath, output_path, effect, **kwargs)
+                
+                return render_template(
+                    "special_effects.html",
+                    filename=output_filename,
+                    effect=effect,
+                    details=details
+                )
+
+            except Exception as e:
+                print(f"Error during special effect: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "special_effects.html",
+                    error="An error occurred during effect processing. Please try again."
+                )
+            
+        else:
+            return render_template(
+                "special_effects.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+            
+    return render_template("special_effects.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
