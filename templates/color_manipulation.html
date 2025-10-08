@@ -52,23 +52,52 @@
 <body>
   <!-- Navbar -->
   <nav class="navbar">
-    <div class="logo-title">
-      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
-      <span class="title">Lynx</span>
+  <div class="logo-title">
+    <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+    <span class="title">Lynx</span>
+  </div>
+
+  <div class="nav-links">
+    <a href="{{ url_for('home') }}" aria-current="page">Home</a>
+
+    <div class="dropdown">
+      <button class="dropbtn">Face Intelligence <i class="fa-solid fa-caret-down"></i></button>
+      <div class="dropdown-content">
+        <a href="{{ url_for('face_detection') }}">Face Detection</a>
+        <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+      </div>
     </div>
-    <div class="nav-links">
-      <a href="{{ url_for('home') }}">Home</a>
-      <a href="{{ url_for('face_detection') }}">Face Detection</a>
-      <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
-      <a href="{{ url_for('filters') }}">Filters</a>
-      <a href="{{ url_for('object_detection') }}">Object Detection</a>
-      <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
-      <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
-      <a href="{{ url_for('color_manipulation') }}" aria-current="page">Color Manipulation</a>
-      <a href="{{ url_for('special_effects') }}">Special Effects</a>
-      <button id="theme-toggle" class="theme-btn"><i class="fa-solid fa-moon"></i></button>
+
+    <div class="dropdown">
+      <button class="dropbtn">Image Filters <i class="fa-solid fa-caret-down"></i></button>
+      <div class="dropdown-content">
+        <a href="{{ url_for('filters') }}">Filters</a>
+        <a href="{{ url_for('special_effects') }}">Special Effects</a>
+      </div>
     </div>
-  </nav>
+
+    <div class="dropdown">
+      <button class="dropbtn">Vision Tools <i class="fa-solid fa-caret-down"></i></button>
+      <div class="dropdown-content">
+        <a href="{{ url_for('object_detection') }}">Object Detection</a>
+        <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+      </div>
+    </div>
+
+    <div class="dropdown">
+      <button class="dropbtn">Color Tools <i class="fa-solid fa-caret-down"></i></button>
+      <div class="dropdown-content">
+        <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+        <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
+      </div>
+    </div>
+
+    <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+      <i class="fa-solid fa-moon"></i>
+    </button>
+  </div>
+</nav>
+
 
   <!-- Main -->
   <main class="face-detection">
