@@ -9,6 +9,7 @@ from models.scene_understanding import analyze_scene
 from models.color_analysis import analyze_colors
 from models.color_manipulation import apply_color_manipulation
 from models.special_effects import apply_special_effect
+from models.document_scanner import scan_document
 import base64
 import time
 
@@ -491,6 +492,61 @@ def special_effects():
             )
             
     return render_template("special_effects.html")
+
+@app.route("/document-scanner", methods=["GET", "POST"])
+def document_scanner():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "document_scanner.html",
+                error="No file part in the request."
+            )
+        
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "document_scanner.html",
+                error="No file selected. Please upload an image."
+            )
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # Get scan mode from form
+            mode = request.form.get("mode", "enhanced")
+
+            # Output filename
+            output_filename = f"scanned_{mode}_{filename}"
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                # Run document scanning
+                details = scan_document(filepath, output_path, mode=mode)
+                
+                return render_template(
+                    "document_scanner.html",
+                    filename=output_filename,
+                    details=details
+                )
+
+            except Exception as e:
+                print(f"Error during document scanning: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "document_scanner.html",
+                    error="An error occurred during document scanning. Please try again."
+                )
+        else:
+            return render_template(
+                "document_scanner.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+    
+    return render_template("document_scanner.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)

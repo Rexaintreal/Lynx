@@ -82,7 +82,12 @@
         <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
       </div>
     </div>
-
+    <div class="dropdown">
+      <button class="dropbtn">Document Tools <i class="fa-solid fa-caret-down"></i></button>
+      <div class="dropdown-content">
+        <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
+      </div>
+    </div>
     <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
       <i class="fa-solid fa-moon"></i>
     </button>

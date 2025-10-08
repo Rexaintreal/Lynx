@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Document Scanner - Scan, dewarp, and enhance documents instantly." />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Document Scanner</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+  
+  <style>
+    html {
+      margin: 0;
+      padding: 0;
+    }
+    html.light {
+      background: #FAFAFA !important;
+      color: #18181B !important;
+    }
+    html.dark {
+      background: #09090B !important;
+      color: #F4F4F5 !important;
+    }
+    body {
+      margin: 0;
+    }
+    body.light {
+      background: #FAFAFA;
+      color: #18181B;
+    }
+    body.dark {
+      background: #09090B;
+      color: #F4F4F5;
+    }
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar,
+    html.dark .navbar {
+      background: rgba(9, 9, 11, 0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+
+      <div class="dropdown">
+        <button class="dropbtn">Face Intelligence <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('face_detection') }}">Face Detection</a>
+          <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Image Filters <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('filters') }}">Filters</a>
+          <a href="{{ url_for('special_effects') }}">Special Effects</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Vision Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('object_detection') }}">Object Detection</a>
+          <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Color Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+          <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Document Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
+        </div>
+      </div>
+
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main class="face-detection">
+    <h1>Document Scanner</h1>
+    <p class="subtitle">Auto-detect edges, dewarp, and enhance your documents</p>
+
+    {% if error %}
+    <div class="result" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);">
+      <p style="color: #ef4444; margin: 0;">
+        <i class="fa-solid fa-circle-exclamation"></i> {{ error }}
+      </p>
+    </div>
+    {% endif %}
+
+    {% if not filename %}
+    <form method="POST" enctype="multipart/form-data" id="upload-form">
+      <label class="upload-box" for="file-upload" id="upload-box">
+        <i class="fa-solid fa-file-image"></i>
+        <span id="upload-text">Click to upload document image</span>
+        <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+        <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
+      </label>
+
+      <div id="preview" class="preview hidden">
+        <img id="preview-img" src="" alt="Preview">
+        <p class="file-name" id="file-name"></p>
+        
+        <!-- Scan mode selector -->
+        <div class="operation-selector" style="margin-top: 1.5rem; max-width: 500px;">
+          <h3><i class="fa-solid fa-sliders"></i> Scan Mode</h3>
+          <div class="operation-grid">
+            <label class="operation-card active" style="cursor: pointer;">
+              <input type="radio" name="mode" value="enhanced" checked hidden>
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <h4>Enhanced</h4>
+              <p>Best text readability</p>
+            </label>
+            <label class="operation-card" style="cursor: pointer;">
+              <input type="radio" name="mode" value="bw" hidden>
+              <i class="fa-solid fa-square"></i>
+              <h4>Black & White</h4>
+              <p>Pure B&W conversion</p>
+            </label>
+            <label class="operation-card" style="cursor: pointer;">
+              <input type="radio" name="mode" value="shadow_removed" hidden>
+              <i class="fa-solid fa-sun"></i>
+              <h4>Shadow Removed</h4>
+              <p>Remove shadows</p>
+            </label>
+            <label class="operation-card" style="cursor: pointer;">
+              <input type="radio" name="mode" value="original" hidden>
+              <i class="fa-solid fa-image"></i>
+              <h4>Original</h4>
+              <p>Just dewarp</p>
+            </label>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn primary hidden" id="process-btn">
+          <i class="fa-solid fa-scanner"></i> Scan Document
+        </button>
+      </div>
+    </form>
+    {% endif %}
+
+    {% if filename %}
+    <section class="result">
+      <h3>
+        <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> 
+        Document Scanned Successfully
+      </h3>
+      
+      {% if details %}
+      <div class="detection-stats" style="text-align: left; margin: 2rem 0;">
+        <h4><i class="fa-solid fa-info-circle"></i> Scan Details</h4>
+        <ul class="object-list">
+          <li>
+            <span class="object-name">Edge Detection</span>
+            <span class="object-count" style="background: {% if details.edges_detected %}#10b981{% else %}#ef4444{% endif %};">
+              {% if details.edges_detected %}Success{% else %}Manual{% endif %}
+            </span>
+          </li>
+          <li>
+            <span class="object-name">Scan Mode</span>
+            <span class="object-count">{{ details.mode|title }}</span>
+          </li>
+          <li>
+            <span class="object-name">Original Size</span>
+            <span class="object-count">{{ details.original_size }}</span>
+          </li>
+          <li>
+            <span class="object-name">Processed Size</span>
+            <span class="object-count">{{ details.processed_size }}</span>
+          </li>
+          <li>
+            <span class="object-name">Perspective Correction</span>
+            <span class="object-count" style="background: {% if details.perspective_corrected %}#10b981{% else %}#71717A{% endif %};">
+              {% if details.perspective_corrected %}Applied{% else %}N/A{% endif %}
+            </span>
+          </li>
+        </ul>
+      </div>
+      {% endif %}
+      
+      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Scanned Document">
+
+      <div class="actions">
+        <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary">
+          <i class="fa-solid fa-download"></i> Download
+        </a>
+        <a href="{{ url_for('document_scanner') }}" class="btn secondary">
+          <i class="fa-solid fa-arrow-rotate-right"></i> Scan Another
+        </a>
+      </div>
+    </section>
+    {% endif %}
+  </main>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    // Handle operation card selection
+    document.querySelectorAll('.operation-card').forEach(card => {
+      card.addEventListener('click', function() {
+        document.querySelectorAll('.operation-card').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        this.querySelector('input[type="radio"]').checked = true;
+      });
+    });
+  </script>
+</body>
+</html>
