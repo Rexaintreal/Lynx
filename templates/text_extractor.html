@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Lynx Text Detection - Detect and highlight text regions in images" />
+  <meta name="description" content="Lynx Text Extractor - Extract text from images using EasyOCR" />
   <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
-  <title>Lynx - Text Detection</title>
+  <title>Lynx - Text Extractor</title>
 
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
@@ -62,6 +62,94 @@
     html.dark .navbar {
       background: rgba(9, 9, 11, 0.8);
       border-color: rgba(255,255,255,0.1);
+    }
+    
+    .text-output {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      text-align: left;
+    }
+    body.dark .text-output {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .text-output h4 {
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .text-box {
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-family: 'Courier New', monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    body.dark .text-box {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .text-item {
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      background: rgba(0, 0, 0, 0.02);
+      border-left: 3px solid #10b981;
+      border-radius: 4px;
+    }
+    body.dark .text-item {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .confidence-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+    .confidence-high {
+      background: #10b981;
+      color: white;
+    }
+    .confidence-medium {
+      background: #f59e0b;
+      color: white;
+    }
+    .confidence-low {
+      background: #71717A;
+      color: white;
+    }
+    .copy-btn {
+      margin-top: 1rem;
+      background: var(--brand-accent);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover {
+      background: #27272A;
+      transform: translateY(-1px);
+    }
+    body.dark .copy-btn {
+      background: #F4F4F5;
+      color: #09090B;
+    }
+    body.dark .copy-btn:hover {
+      background: #E4E4E7;
     }
   </style>
 
@@ -119,6 +207,7 @@
           <a href="{{ url_for('text_extractor') }}">Text Extractor</a>
         </div>
       </div>
+
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
         <i class="fa-solid fa-moon"></i>
       </button>
@@ -126,8 +215,8 @@
   </nav>
 
   <main class="face-detection">
-    <h1>Text Detection</h1>
-    <p class="subtitle">Detect and highlight text regions in images using OpenCV</p>
+    <h1>Text Extractor</h1>
+    <p class="subtitle">Extract readable text from images using EasyOCR with AI-powered recognition</p>
 
     {% if error %}
     <div class="result" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);">
@@ -140,9 +229,9 @@
     {% if not filename %}
     <form method="POST" enctype="multipart/form-data" id="upload-form">
       <label class="upload-box" for="file-upload" id="upload-box">
-        <i class="fa-solid fa-file-text"></i>
+        <i class="fa-solid fa-file-lines"></i>
         <span id="upload-text">Click to upload image with text</span>
-        <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+        <small class="helper-text">PNG, JPG, JPEG • Works best with clear text</small>
         <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
       </label>
 
@@ -150,79 +239,70 @@
         <img id="preview-img" src="" alt="Preview">
         <p class="file-name" id="file-name"></p>
         
-        <!-- Detection method selector -->
         <div class="operation-selector" style="margin-top: 1.5rem; max-width: 500px;">
-          <h3><i class="fa-solid fa-sliders"></i> Detection Method</h3>
+          <h3><i class="fa-solid fa-sliders"></i> Options</h3>
           <div class="operation-grid">
             <label class="operation-card active" style="cursor: pointer;">
-              <input type="radio" name="method" value="mser" checked hidden>
-              <i class="fa-solid fa-magic"></i>
-              <h4>MSER</h4>
-              <p>Best for varied text</p>
-            </label>
-            <label class="operation-card" style="cursor: pointer;">
-              <input type="radio" name="method" value="contour" hidden>
-              <i class="fa-solid fa-draw-polygon"></i>
-              <h4>Contour</h4>
-              <p>Good for documents</p>
-            </label>
-            <label class="operation-card" style="cursor: pointer;">
-              <input type="radio" name="method" value="basic" hidden>
+              <input type="radio" name="draw_boxes" value="true" checked hidden>
               <i class="fa-solid fa-border-all"></i>
-              <h4>Basic</h4>
-              <p>Fast detection</p>
+              <h4>With Boxes</h4>
+              <p>Show text regions</p>
             </label>
             <label class="operation-card" style="cursor: pointer;">
-              <input type="radio" name="method" value="extract" hidden>
-              <i class="fa-solid fa-highlighter"></i>
-              <h4>Extract</h4>
-              <p>Enhance text</p>
+              <input type="radio" name="draw_boxes" value="false" hidden>
+              <i class="fa-solid fa-image"></i>
+              <h4>No Boxes</h4>
+              <p>Original image</p>
             </label>
+          </div>
+          
+          <div class="control-group" style="margin-top: 1rem;">
+            <label for="confidence">Confidence Threshold: <span id="conf-value">25%</span></label>
+            <input type="range" id="confidence" name="confidence" min="0" max="100" value="25" class="slider-group">
+            <div class="saturation-labels">
+              <span>More results</span>
+              <span>Higher accuracy</span>
+            </div>
           </div>
         </div>
         
         <button type="submit" class="btn primary hidden" id="process-btn">
-          <i class="fa-solid fa-search"></i> Detect Text
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Extract Text
         </button>
       </div>
     </form>
     {% endif %}
 
-    {% if filename %}
+    {% if filename and details %}
     <section class="result">
       <h3>
         <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> 
-        Text Detection Complete
+        Text Extraction Complete
       </h3>
       
-      {% if details %}
       <div class="detection-stats" style="text-align: left; margin: 2rem 0;">
-        <h4><i class="fa-solid fa-info-circle"></i> Detection Details</h4>
+        <h4><i class="fa-solid fa-chart-simple"></i> Extraction Summary</h4>
         <ul class="object-list">
           <li>
-            <span class="object-name">Detection Method</span>
-            <span class="object-count">{{ details.method|upper if details.method else 'EXTRACT' }}</span>
+            <span class="object-name">Text Regions Found</span>
+            <span class="object-count" style="background: {% if details.total_texts > 0 %}#10b981{% else %}#71717A{% endif %};">
+              {{ details.total_texts }}
+            </span>
           </li>
           <li>
-            <span class="object-name">Text Regions Found</span>
-            <span class="object-count" style="background: {% if details.total_regions > 0 %}#10b981{% else %}#71717A{% endif %};">
-              {{ details.total_regions }}
+            <span class="object-name">Average Confidence</span>
+            <span class="object-count" style="background: {% if details.avg_confidence >= 70 %}#10b981{% elif details.avg_confidence >= 40 %}#f59e0b{% else %}#71717A{% endif %};">
+              {{ details.avg_confidence }}%
             </span>
           </li>
           <li>
             <span class="object-name">Image Size</span>
             <span class="object-count">{{ details.image_size }}</span>
           </li>
-          {% if details.avg_region_size %}
+          {% if details.filtered_count > 0 %}
           <li>
-            <span class="object-name">Avg. Region Size</span>
-            <span class="object-count">{{ details.avg_region_size }} px²</span>
-          </li>
-          {% endif %}
-          {% if details.preprocessed %}
-          <li>
-            <span class="object-name">Preprocessing</span>
-            <span class="object-count" style="background: #10b981;">Applied</span>
+            <span class="object-name">Low Confidence Filtered</span>
+            <span class="object-count">{{ details.filtered_count }}</span>
           </li>
           {% endif %}
         </ul>
@@ -233,16 +313,47 @@
         </p>
         {% endif %}
       </div>
-      {% endif %}
       
-      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Text Detection Result">
+      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Text Extraction Result">
+
+      {% if details.extracted_texts %}
+      <div class="text-output">
+        <h4><i class="fa-solid fa-align-left"></i> Extracted Text</h4>
+        
+        <div style="margin: 1.5rem 0;">
+          <strong>Full Text:</strong>
+          <div class="text-box" id="full-text">{{ details.full_text }}</div>
+          <button class="copy-btn" onclick="copyText('full-text')">
+            <i class="fa-solid fa-copy"></i> Copy All Text
+          </button>
+        </div>
+        
+        <div style="margin-top: 2rem;">
+          <strong>Individual Text Regions ({{ details.total_texts }}):</strong>
+          {% for item in details.extracted_texts %}
+          <div class="text-item">
+            <span>{{ item.text }}</span>
+            <span class="confidence-badge {% if item.confidence >= 70 %}confidence-high{% elif item.confidence >= 40 %}confidence-medium{% else %}confidence-low{% endif %}">
+              {{ item.confidence }}%
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div class="text-output">
+        <p style="color: #71717A; text-align: center; margin: 2rem 0;">
+          <i class="fa-solid fa-circle-info"></i> No text detected in the image. Try adjusting the confidence threshold or use an image with clearer text.
+        </p>
+      </div>
+      {% endif %}
 
       <div class="actions">
         <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary">
-          <i class="fa-solid fa-download"></i> Download
+          <i class="fa-solid fa-download"></i> Download Image
         </a>
-        <a href="{{ url_for('text_detection') }}" class="btn secondary">
-          <i class="fa-solid fa-arrow-rotate-right"></i> Detect Another
+        <a href="{{ url_for('text_extractor') }}" class="btn secondary">
+          <i class="fa-solid fa-arrow-rotate-right"></i> Extract Another
         </a>
       </div>
     </section>
@@ -259,6 +370,32 @@
         this.querySelector('input[type="radio"]').checked = true;
       });
     });
+
+    // Update confidence value display
+    const confSlider = document.getElementById('confidence');
+    const confValue = document.getElementById('conf-value');
+    if (confSlider && confValue) {
+      confSlider.addEventListener('input', function() {
+        confValue.textContent = this.value + '%';
+      });
+    }
+
+    // Copy text function
+    function copyText(elementId) {
+      const textElement = document.getElementById(elementId);
+      const text = textElement.textContent;
+      
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy text:', err);
+      });
+    }
   </script>
 </body>
 </html>

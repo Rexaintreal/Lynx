@@ -11,6 +11,7 @@ from models.color_manipulation import apply_color_manipulation
 from models.special_effects import apply_special_effect
 from models.document_scanner import scan_document
 from models.text_detection import detect_text_regions, extract_text_basic
+from models.text_extractor import extract_text_from_image
 import base64
 import time
 
@@ -606,6 +607,67 @@ def text_detection():
             )
     
     return render_template("text_detection.html")
+
+@app.route("/text-extractor", methods=["GET", "POST"])
+def text_extractor():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "text_extractor.html",
+                error="No file part in the request."
+            )
+        
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "text_extractor.html",
+                error="No file selected. Please upload an image."
+            )
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # Get options from the from
+            draw_boxes = request.form.get("draw_boxes", "true") == "true"
+            confidence = float(request.form.get("confidence", 25)) / 100  # Convert to 0-1 range
+
+            # Output filename
+            output_filename = f"extracted_{filename}"
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                # Run text extraction
+                details = extract_text_from_image(
+                    filepath,
+                    output_path,
+                    draw_boxes=draw_boxes,
+                    confidence_threshold=confidence
+                )
+
+                return render_template(
+                    "text_extractor.html",
+                    filename=output_filename,
+                    details=details
+                )
+            
+            except Exception as e:
+                print(f"Error during text extraction: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "text_extractor.html",
+                    error="An error occurred during text extraction. Please try again."
+                )
+        else:
+            return render_template(
+                "text_extractor.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+    
+    return render_template("text_extractor.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)

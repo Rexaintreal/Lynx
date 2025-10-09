@@ -118,6 +118,7 @@
         <div class="dropdown-content">
           <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
           <a href="{{ url_for('text_detection') }}">Text Detection</a>
+          <a href="{{ url_for('text_extractor') }}">Text Extractor</a>
         </div>
       </div>
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
@@ -193,6 +194,11 @@
         <i class="fa-solid fa-font"></i>
         <h3>Text Detection</h3>
         <p>Detect and highlight text regions in images.</p>
+      </div>
+      <div class="feature">
+        <i class="fa-solid fa-file-lines"></i>
+        <h3>Text Extractor</h3>
+        <p>Extract readable text from images using AI-powered OCR.</p>
       </div>
     </section>
   </main>

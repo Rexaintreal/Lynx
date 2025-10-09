@@ -26,7 +26,7 @@ def extract_text_from_image(image_path, output_path, draw_boxes=True, confidence
 
     # get easyOCR reader
 
-    ocr_reader = get_reader
+    ocr_reader = get_reader()
 
     # Perform OCR
     results = ocr_reader.readtext(image_path)
