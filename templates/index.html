@@ -117,6 +117,7 @@
         <button class="dropbtn">Document Tools <i class="fa-solid fa-caret-down"></i></button>
         <div class="dropdown-content">
           <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
+          <a href="{{ url_for('text_detection') }}">Text Detection</a>
         </div>
       </div>
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
@@ -188,7 +189,11 @@
         <h3>Document Scanner</h3>
         <p>Auto-detect edges, dewarp, and enhance your documents instantly.</p>
       </div>
-
+      <div class="feature">
+        <i class="fa-solid fa-font"></i>
+        <h3>Text Detection</h3>
+        <p>Detect and highlight text regions in images.</p>
+      </div>
     </section>
   </main>
 

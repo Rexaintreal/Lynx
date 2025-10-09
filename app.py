@@ -10,6 +10,7 @@ from models.color_analysis import analyze_colors
 from models.color_manipulation import apply_color_manipulation
 from models.special_effects import apply_special_effect
 from models.document_scanner import scan_document
+from models.text_detection import detect_text_regions, extract_text_basic
 import base64
 import time
 
@@ -547,6 +548,64 @@ def document_scanner():
             )
     
     return render_template("document_scanner.html")
+
+@app.route("/text-detection", methods=["GET", "POST"])
+def text_detection():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "text_detection.html",
+                error="No file part in the request."
+            )
+        
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "text_detection.html",
+                error="No file selected. Please upload an image."
+            )
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # Get detection method from form
+            method = request.form.get("method", "mser")
+
+            # Output filename
+            output_filename = f"text_{method}_{filename}"
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                # Run text detection
+                if method == "extract":
+                    details = extract_text_basic(filepath, output_path)
+                else:
+                    details = detect_text_regions(filepath, output_path, detection_method=method)
+                
+                return render_template(
+                    "text_detection.html",
+                    filename=output_filename,
+                    details=details
+                )
+
+            except Exception as e:
+                print(f"Error during text detection: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "text_detection.html",
+                    error="An error occurred during text detection. Please try again."
+                )
+        else:
+            return render_template(
+                "text_detection.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+    
+    return render_template("text_detection.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
