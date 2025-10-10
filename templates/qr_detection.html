@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#FAFAFA" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#09090B" media="(prefers-color-scheme: dark)">
+    <title>Lynx - QR Detection</title>
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        /* QR Page Content */
+        .qr-page-content {
+            max-width: 960px;
+            margin: 40px auto 60px auto;
+            padding: 0 1rem;
+            text-align: center;
+        }
+
+        /* Upload Box */
+        .upload-form { width: 100%; }
+        .upload-box {
+            margin-top: 2rem;
+            padding: 3rem 2rem;
+            border: 2px dashed var(--brand-accent);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 320px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .upload-box i { font-size: 3rem; margin-bottom: 10px; color: var(--brand-accent); }
+        /* Preview & Result Boxes */
+        .result-container {
+            display: flex; gap: 30px; flex-wrap: wrap; justify-content: center;
+            text-align: left;
+            margin-top: 3rem;
+        }
+        .result-box {
+            flex: 1; min-width: 300px; max-width: 450px;
+            background: rgba(0, 0, 0, 0.02);
+            padding: 2rem; 
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        body.dark .result-box { 
+            background: rgba(255, 255, 255, 0.03); 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .result-image { 
+            max-width: 100%; height: auto; border-radius: 4px; 
+            margin-bottom: 20px; 
+            max-height: 350px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12); /* Added from .preview img */
+        }
+        
+        /* Decoded Text Box */
+        .decoded-text-box {
+            background-color: rgba(0, 0, 0, 0.05); /* Light gray background */
+            border: 1px solid rgba(0,0,0,0.1); 
+            padding: 15px; border-radius: 6px; 
+            margin: 15px 0 20px 0; width: 100%; 
+            overflow-x: auto; white-space: pre-wrap; 
+            word-break: break-all; font-family: monospace;
+            font-size: 0.9rem;
+        }
+        body.dark .decoded-text-box { 
+            background-color: rgba(255, 255, 255, 0.05); 
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .action-buttons { 
+            width: 100%; display: flex; justify-content: space-between; gap: 10px; 
+            margin-top: 10px; 
+        }
+        
+        .status-success { color: #10B981; }
+        .status-error { color: #ef4444; }
+    </style>
+</head>
+
+<body>
+    <script>
+    (() => {
+        const savedTheme = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme = savedTheme || (prefersDark ? "dark" : "light");
+        
+        document.body.classList.add(theme);
+        
+        document.documentElement.classList.add(theme); 
+    })();
+    </script>
+    
+    <nav class="navbar">
+        <div class="logo-title">
+            <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+            <span class="title">Lynx</span>
+        </div>
+
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}">Home</a>
+
+            <div class="dropdown">
+                <button class="dropbtn">Face Intelligence <i class="fa-solid fa-caret-down"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('face_detection') }}">Face Detection</a>
+                    <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+                    <a href="{{ url_for('webcam_live') }}">Webcam Live</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn">Image Filters <i class="fa-solid fa-caret-down"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('filters') }}">Filters</a>
+                    <a href="{{ url_for('special_effects') }}">Special Effects</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn" aria-current="page">Vision Tools <i class="fa-solid fa-caret-down"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('object_detection') }}">Object Detection</a>
+                    <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+                    <a href="{{ url_for('qr_detection') }}" class="active-link">QR Detection</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn">Color Tools <i class="fa-solid fa-caret-down"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+                    <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn">Document Tools <i class="fa-solid fa-caret-down"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
+                    <a href="{{ url_for('text_detection') }}">Text Detection</a>
+                    <a href="{{ url_for('text_extractor') }}">Text Extractor</a>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </nav>
+
+
+    <main class="qr-page-content">
+        <h1 class="face-detection-h1">QR Code Detection</h1>
+        <p class="subtitle">Upload an image with a QR code and extract the decoded text.</p>
+
+        <form action="{{ url_for('qr_detection') }}" method="POST" enctype="multipart/form-data" id="qr-upload-form"
+              class="upload-form {% if result %}hidden{% endif %}">
+            <label class="upload-box" for="image">
+                <i class="fa-solid fa-qrcode"></i>
+                <span id="upload-text">Click to upload image</span>
+                <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+                <input type="file" id="image" name="image" accept=".png,.jpg,.jpeg" hidden required>
+            </label>
+            <button type="submit" id="submit-btn-hidden" class="hidden">Detect QR</button>
+        </form>
+
+        <div id="pre-submit-box" class="preview hidden">
+            <h3>Ready to Detect</h3>
+            <div class="preview-container">
+                <img id="preview-img" src="" alt="Image Preview" class="result-image">
+            </div>
+            <p id="file-name" class="file-name"></p>
+            <div class="actions">
+                <button type="button" id="reset-btn" class="btn secondary">
+                    <i class="fa-solid fa-rotate-left"></i> Change File
+                </button>
+                <button type="button" id="detect-btn" class="btn primary">
+                    <i class="fa-solid fa-play"></i> Detect QR
+                </button>
+            </div>
+        </div>
+
+        {% if result %}
+            <div class="result-container">
+                {% if result.success %}
+                    <div class="result-box">
+                        <h3 class="status-success"><i class="fa-solid fa-check-circle"></i> Detection Successful</h3>
+                        
+                        <img src="{{ url_for('uploaded_file', filename=result.image_filename) }}" 
+                             alt="QR Detected" class="result-image">
+                        <a href="{{ url_for('uploaded_file', filename=result.image_filename) }}" 
+                           download="qr_detected.jpg" class="btn primary">
+                            <i class="fa-solid fa-download"></i> Download Image
+                        </a>
+                    </div>
+
+                    <div class="result-box" style="align-items: flex-start;">
+                        <h3>Decoded Data</h3>
+                        <p style="font-weight: 500; width: 100%;">Content:</p>
+                        <div class="decoded-text-box" id="decoded-text">{{ result.data }}</div>
+                        <div class="action-buttons">
+                            <button id="copy-btn" class="btn secondary" onclick="copyText(this)">
+                                <i class="fa-solid fa-copy"></i> Copy Text
+                            </button>
+                            <a href="{{ url_for('qr_detection') }}" class="btn primary">
+                                <i class="fa-solid fa-upload"></i> New Upload
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="result-box" style="width: 100%; max-width: 600px; margin: 0 auto; text-align: center;">
+                        <h3 class="status-error"><i class="fa-solid fa-circle-xmark"></i> Detection Failed</h3>
+                        <p>{{ result.message }}</p>
+                        <a href="{{ url_for('qr_detection') }}" class="btn primary" style="margin-top: 15px;">
+                            <i class="fa-solid fa-rotate-left"></i> Try Again
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer">Built with OpenCV & Flask</footer>
+
+    <script>
+        // --- UI State Management for Upload/Preview ---
+        const fileInput = document.getElementById("image");
+        const uploadForm = document.getElementById("qr-upload-form");
+        const preSubmitBox = document.getElementById("pre-submit-box");
+        const previewImg = document.getElementById("preview-img");
+        const fileNameDisplay = document.getElementById("file-name");
+        const detectBtn = document.getElementById("detect-btn");
+        const resetBtn = document.getElementById("reset-btn");
+        const submitHiddenBtn = document.getElementById("submit-btn-hidden");
+
+        function resetUI() {
+            uploadForm.classList.remove("hidden");
+            preSubmitBox.classList.add("hidden");
+            fileInput.value = "";
+        }
+
+        fileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert("File too large! Maximum size is 10MB.");
+                fileInput.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                fileNameDisplay.textContent = file.name;
+                
+                uploadForm.classList.add("hidden");
+                preSubmitBox.classList.remove("hidden");
+            };
+            reader.readAsDataURL(file);
+        });
+
+        detectBtn.addEventListener("click", () => {
+            submitHiddenBtn.click(); // Trigger form submission
+        });
+
+        resetBtn.addEventListener("click", resetUI);
+        
+        // --- Utility: Copy Text ---
+        function copyText(buttonElement) {
+            const textElement = document.getElementById("decoded-text");
+            if (textElement) {
+                navigator.clipboard.writeText(textElement.innerText.trim());
+                buttonElement.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                setTimeout(() => {
+                    buttonElement.innerHTML = '<i class="fa-solid fa-copy"></i> Copy Text';
+                }, 2000);
+            }
+        }
+        window.copyText = copyText;
+
+        // --- Theme Toggle Logic ---
+        const toggleBtn = document.getElementById("theme-toggle");
+        const body = document.body;
+        const html = document.documentElement;
+
+        if (toggleBtn) {
+            const icon = toggleBtn.querySelector("i");
+            
+            // Set initial icon based on current theme class
+            if (body.classList.contains("dark")) {
+                icon.classList.remove("fa-moon");
+                icon.classList.add("fa-sun");
+            }
+            
+            toggleBtn.addEventListener("click", () => {
+                // Toggle classes on both body (for CSS) and html (for navbar styles)
+                body.classList.toggle("dark");
+                body.classList.toggle("light");
+                html.classList.toggle("dark");
+                html.classList.toggle("light");
+
+                const newIsDark = body.classList.contains("dark");
+                
+                if (newIsDark) {
+                    icon.classList.remove("fa-moon");
+                    icon.classList.add("fa-sun");
+                    localStorage.setItem("theme", "dark");
+                } else {
+                    icon.classList.remove("fa-sun");
+                    icon.classList.add("fa-moon");
+                    localStorage.setItem("theme", "light");
+                }
+            });
+        }
+    </script>
+</body>
+</html>

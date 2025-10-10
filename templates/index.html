@@ -104,6 +104,7 @@
         <div class="dropdown-content">
           <a href="{{ url_for('object_detection') }}">Object Detection</a>
           <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+          <a href="{{ url_for('qr_detection') }}" class="active-link">QR Detection</a>
         </div>
       </div>
 
@@ -205,6 +206,11 @@
         <i class="fa-solid fa-video"></i>
         <h3>Webcam Live</h3>
         <p>Real-time face detection and filter processing.</p>
+      </div>
+      <div class="feature">
+        <i class="fa-solid fa-qrcode"></i>
+        <h3>Webcam Live</h3>
+        <p>QR Code detection and Scanner.</p>
       </div>
     </section>
   </main>

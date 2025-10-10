@@ -13,6 +13,7 @@ from models.document_scanner import scan_document
 from models.text_detection import detect_text_regions, extract_text_basic
 from models.text_extractor import extract_text_from_image
 from models.webcam_processing import process_frame, save_frame
+from models.qr_detection import detect_qr_from_image
 import base64
 import time
 
@@ -740,6 +741,28 @@ def webcam_capture():
             "success": False,
             "error": str(e)
         }), 500
+    
+@app.route("/qr_detection", methods=["GET", "POST"])
+def qr_detection():
+    qr_result = None
+    if request.method == "POST":
+        if "image" not in request.files:
+            qr_result = {"success": False, "message": "No file uploaded."}
+        else:
+            file = request.files["image"]
+            if file.filename == "":
+                qr_result = {"success": False, "message": "No file selected."}
+            else:
+                filename = secure_filename(file.filename)
+                upload_path = os.path.join("uploads", filename)
+                file.save(upload_path)
+
+                qr_result = detect_qr_from_image(upload_path, "uploads")
+                
+                if qr_result['success']:
+                    qr_result['image_filename'] = os.path.basename(qr_result['image_path'])
+
+    return render_template("qr_detection.html", result=qr_result)
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
