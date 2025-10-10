@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Number Plate Detection - Extract and recognize vehicle number plates using OpenCV and EasyOCR" />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Number Plate Detection</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <!-- Theme initialization -->
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+
+  <style>
+    html, body { margin: 0; padding: 0; }
+    html.light { background: #FAFAFA !important; color: #18181B !important; }
+    html.dark { background: #09090B !important; color: #F4F4F5 !important; }
+    body.light { background: #FAFAFA; color: #18181B; }
+    body.dark { background: #09090B; color: #F4F4F5; }
+
+    .navbar {
+      background: rgba(255,255,255,0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar, html.dark .navbar {
+      background: rgba(9,9,11,0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    .plate-list {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0;
+    }
+
+    .plate-item {
+      background: rgba(0,0,0,0.03);
+      border-left: 3px solid #10b981;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+    }
+
+    body.dark .plate-item {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .actions {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .subtitle {
+      color: #71717A;
+      margin-top: -0.5rem;
+      font-size: 1rem;
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <div class="dropdown">
+        <button class="dropbtn">Face Intelligence <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('face_detection') }}">Face Detection</a>
+          <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+          <a href="{{ url_for('webcam_live') }}">Webcam Live</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Image Filters <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('filters') }}">Filters</a>
+          <a href="{{ url_for('special_effects') }}">Special Effects</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Vision Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('object_detection') }}">Object Detection</a>
+          <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+          <a href="{{ url_for('qr_detection') }}">QR Detection</a>
+          <a href="{{ url_for('numberplate_detection') }}" class="active-link">Number Plate Detection</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Color Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+          <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Document Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
+          <a href="{{ url_for('text_detection') }}">Text Detection</a>
+          <a href="{{ url_for('text_extractor') }}">Text Extractor</a>
+        </div>
+      </div>
+
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main class="face-detection">
+    <h1>Number Plate Detection</h1>
+    <p class="subtitle">Extract and recognize vehicle number plates using OpenCV & EasyOCR.</p>
+
+    {% if not filename %}
+    <form method="POST" enctype="multipart/form-data" id="upload-form">
+      <label class="upload-box" for="file-upload" id="upload-box">
+        <i class="fa-solid fa-car"></i>
+        <span id="upload-text">Click to upload vehicle image</span>
+        <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+        <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
+      </label>
+
+      <div id="preview" class="preview hidden">
+        <img id="preview-img" src="" alt="Preview">
+        <p class="file-name" id="file-name"></p>
+      </div>
+
+      <button type="submit" id="process-btn" class="btn primary hidden">
+        <i class="fa-solid fa-magnifying-glass"></i> Detect Plates
+      </button>
+    </form>
+    {% endif %}
+
+    {% if filename %}
+      <section class="result">
+        <h3><i class="fa-solid fa-car-burst" style="color:#10b981;"></i> Detection Results</h3>
+
+        <img src="/{{ filename.replace('\\', '/') }}" alt="Detected Number Plates" class="output-image">
+
+        <div class="detection-stats" style="text-align:left; margin:2rem 0;">
+          <h4><i class="fa-solid fa-list"></i> Extracted Number Plates</h4>
+          {% if detected_plates %}
+          <ul class="plate-list">
+            {% for plate in detected_plates %}
+            <li class="plate-item"><i class="fa-solid fa-hashtag"></i> {{ plate }}</li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p style="color:#71717A;"><i class="fa-solid fa-circle-info"></i> No valid number plates detected. Try a clearer image.</p>
+          {% endif %}
+        </div>
+
+        <div class="actions">
+          <a href="{{ url_for('numberplate_detection') }}" class="btn secondary">
+            <i class="fa-solid fa-arrow-left"></i> Detect Another
+          </a>
+          <a href="/{{ filename.replace('\\', '/') }}" download class="btn primary">
+            <i class="fa-solid fa-download"></i> Download Result
+          </a>
+        </div>
+      </section>
+    {% endif %}
+  </main>
+
+  <footer class="footer">Built with OpenCV, EasyOCR & Flask</footer>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

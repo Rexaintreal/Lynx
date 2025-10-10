@@ -14,6 +14,7 @@ from models.text_detection import detect_text_regions, extract_text_basic
 from models.text_extractor import extract_text_from_image
 from models.webcam_processing import process_frame, save_frame
 from models.qr_detection import detect_qr_from_image
+from models.numberplate_detection import extract_numberplates
 import base64
 import time
 
@@ -763,6 +764,60 @@ def qr_detection():
                     qr_result['image_filename'] = os.path.basename(qr_result['image_path'])
 
     return render_template("qr_detection.html", result=qr_result)
+
+@app.route("/numberplate_detection", methods=["GET", "POST"])
+def numberplate_detection():
+    if request.method == "POST":
+        # Check for file in request
+        if "file" not in request.files:
+            return render_template(
+                "numberplate_detection.html",
+                error="No file part in the request."
+            )
+        
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "numberplate_detection.html",
+                error="No file selected. Please upload an image."
+            )
+
+        # Validate and save input file
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            input_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(input_path)
+
+            # Output path setup
+            output_filename = f"plate_{filename}"
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                result = extract_numberplates(input_path, output_path)
+
+                return render_template(
+                    "numberplate_detection.html",
+                    filename=result["output_path"],  
+                    detected_plates=result["detected_plates"]
+                )
+
+
+            except Exception as e:
+                print(f"Error during number plate detection: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "numberplate_detection.html",
+                    error="An error occurred while processing the image. Please try again."
+                )
+        else:
+            return render_template(
+                "numberplate_detection.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+
+    return render_template("numberplate_detection.html", filename=None)
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
