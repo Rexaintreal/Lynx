@@ -34,7 +34,7 @@ def detect_faces_realtime(frame):
  
 def apply_filter_realtime(frame, filter_type="none", **params):
     if filter_type == "grayscale":
-        frmae = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
 
     elif filter_type == "sepia":
