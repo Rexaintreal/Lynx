@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Webcam Live - Real-time face detection and filters" />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Webcam Live</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+
+  <style>
+    html { margin: 0; padding: 0; }
+    html.light { background: #FAFAFA !important; color: #18181B !important; }
+    html.dark { background: #09090B !important; color: #F4F4F5 !important; }
+    body { margin: 0; }
+    body.light { background: #FAFAFA; color: #18181B; }
+    body.dark { background: #09090B; color: #F4F4F5; }
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar, html.dark .navbar {
+      background: rgba(9, 9, 11, 0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  
+  <style>
+    /* Webcam-specific styles */
+    .webcam-container {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 2rem;
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    
+    .webcam-section {
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    body.dark .webcam-section {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .webcam-view {
+      position: relative;
+    }
+    
+    #webcam-video, #webcam-canvas {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 8px;
+      background: #000;
+      display: block;
+    }
+    
+    #webcam-canvas {
+      display: none;
+    }
+    
+    .webcam-overlay {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+    
+    .status-dot.active {
+      background: #10b981;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .webcam-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    
+    .control-section {
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    body.dark .control-section {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .control-section h4 {
+      margin: 0 0 1rem 0;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .control-section h4 i {
+      color: var(--brand-accent);
+    }
+    
+    .control-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .btn-full {
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    
+    .filter-btn {
+      padding: 0.75rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    
+    body.dark .filter-btn {
+      background: #18181B;
+      border-color: rgba(255, 255, 255, 0.1);
+      color: #F4F4F5;
+    }
+    
+    .filter-btn:hover {
+      border-color: var(--brand-accent);
+      transform: translateY(-1px);
+    }
+    
+    .filter-btn.active {
+      border-color: var(--brand-accent);
+      background: rgba(82, 82, 91, 0.1);
+    }
+    
+    body.dark .filter-btn.active {
+      background: rgba(212, 212, 216, 0.1);
+    }
+    
+    .stats-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    body.dark .stat-item {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .stat-label {
+      font-size: 0.85rem;
+      color: #71717A;
+    }
+    
+    body.dark .stat-label {
+      color: #A1A1AA;
+    }
+    
+    .stat-value {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    
+    .capture-preview {
+      margin-top: 1rem;
+      display: none;
+    }
+    
+    .capture-preview.active {
+      display: block;
+    }
+    
+    .capture-preview img {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+    }
+    
+    .permission-prompt {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    
+    .permission-prompt i {
+      font-size: 3rem;
+      color: var(--brand-accent);
+      margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 1024px) {
+      .webcam-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+
+      <div class="dropdown">
+        <button class="dropbtn">Face Intelligence <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('face_detection') }}">Face Detection</a>
+          <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+          <a href="{{ url_for('webcam_live') }}">Webcam Live</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Image Filters <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('filters') }}">Filters</a>
+          <a href="{{ url_for('special_effects') }}">Special Effects</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Vision Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('object_detection') }}">Object Detection</a>
+          <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Color Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+          <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
+        </div>
+      </div>
+      <div class="dropdown">
+        <button class="dropbtn">Document Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
+          <a href="{{ url_for('text_detection') }}">Text Detection</a>
+          <a href="{{ url_for('text_extractor') }}">Text Extractor</a>
+        </div>
+      </div>
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main class="face-detection">
+    <h1>Webcam Live Processing</h1>
+    <p class="subtitle">Real-time face detection and filters powered by OpenCV</p>
+
+    <div class="webcam-container">
+      <!-- Left: Video Feed -->
+      <div class="webcam-section webcam-view">
+        <div id="permission-prompt" class="permission-prompt">
+          <i class="fa-solid fa-video"></i>
+          <h3>Camera Access Required</h3>
+          <p>Click "Start Webcam" to begin live processing</p>
+        </div>
+        
+        <video id="webcam-video" autoplay playsinline></video>
+        <canvas id="webcam-canvas"></canvas>
+        
+        <div class="webcam-overlay">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Camera Inactive</span>
+        </div>
+      </div>
+
+      <!-- Right: Controls -->
+      <div class="webcam-controls">
+        <!-- Camera Controls -->
+        <div class="control-section">
+          <h4><i class="fa-solid fa-video"></i> Camera Controls</h4>
+          <div class="control-buttons">
+            <button id="start-btn" class="btn primary btn-full">
+              <i class="fa-solid fa-play"></i> Start Webcam
+            </button>
+            <button id="stop-btn" class="btn secondary btn-full" style="display: none;">
+              <i class="fa-solid fa-stop"></i> Stop Webcam
+            </button>
+          </div>
+        </div>
+
+        <!-- Face Detection -->
+        <div class="control-section">
+          <h4><i class="fa-solid fa-face-smile"></i> Face Detection</h4>
+          <div class="control-buttons">
+            <button id="toggle-detection" class="btn secondary btn-full">
+              <i class="fa-solid fa-eye"></i> Enable Detection
+            </button>
+          </div>
+          <div class="stats-panel" style="margin-top: 1rem;">
+            <div class="stat-item">
+              <span class="stat-label">Faces Detected</span>
+              <span class="stat-value" id="face-count">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="control-section">
+          <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Apply Filters</h4>
+          <div class="filter-grid">
+            <button class="filter-btn active" data-filter="none">None</button>
+            <button class="filter-btn" data-filter="grayscale">Grayscale</button>
+            <button class="filter-btn" data-filter="sepia">Sepia</button>
+            <button class="filter-btn" data-filter="invert">Invert</button>
+            <button class="filter-btn" data-filter="blur">Blur</button>
+            <button class="filter-btn" data-filter="edge">Edge</button>
+            <button class="filter-btn" data-filter="cartoon">Cartoon</button>
+            <button class="filter-btn" data-filter="sketch">Sketch</button>
+            <button class="filter-btn" data-filter="cool">Cool</button>
+            <button class="filter-btn" data-filter="warm">Warm</button>
+          </div>
+        </div>
+
+        <!-- Capture -->
+        <div class="control-section">
+          <h4><i class="fa-solid fa-camera"></i> Capture Frame</h4>
+          <button id="capture-btn" class="btn primary btn-full" disabled>
+            <i class="fa-solid fa-camera"></i> Capture Screenshot
+          </button>
+          <div id="capture-preview" class="capture-preview">
+            <img id="captured-img" src="" alt="Captured">
+            <button id="download-capture" class="btn secondary btn-full">
+              <i class="fa-solid fa-download"></i> Download
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">Built with OpenCV & Flask</footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    // Webcam Live Processing Logic
+    const video = document.getElementById('webcam-video');
+    const canvas = document.getElementById('webcam-canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const toggleDetection = document.getElementById('toggle-detection');
+    const captureBtn = document.getElementById('capture-btn');
+    const faceCountEl = document.getElementById('face-count');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const permissionPrompt = document.getElementById('permission-prompt');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const capturePreview = document.getElementById('capture-preview');
+    const capturedImg = document.getElementById('captured-img');
+    const downloadCapture = document.getElementById('download-capture');
+
+    let stream = null;
+    let isProcessing = false;
+    let detectionEnabled = false;
+    let currentFilter = 'none';
+    let processingInterval = null;
+
+    // Start webcam
+    startBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { width: 1280, height: 720 } 
+        });
+        video.srcObject = stream;
+        
+        video.onloadedmetadata = () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          
+          permissionPrompt.style.display = 'none';
+          video.style.display = 'block';
+          startBtn.style.display = 'none';
+          stopBtn.style.display = 'block';
+          captureBtn.disabled = false;
+          
+          statusDot.classList.add('active');
+          statusText.textContent = 'Camera Active';
+          
+          startProcessing();
+        };
+      } catch (err) {
+        alert('Camera access denied: ' + err.message);
+      }
+    });
+
+    // Stop webcam
+    stopBtn.addEventListener('click', () => {
+      stopProcessing();
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      video.srcObject = null;
+      video.style.display = 'none';
+      permissionPrompt.style.display = 'block';
+      startBtn.style.display = 'block';
+      stopBtn.style.display = 'none';
+      captureBtn.disabled = true;
+      
+      statusDot.classList.remove('active');
+      statusText.textContent = 'Camera Inactive';
+      faceCountEl.textContent = '0';
+    });
+
+    // Toggle face detection
+    toggleDetection.addEventListener('click', () => {
+      detectionEnabled = !detectionEnabled;
+      if (detectionEnabled) {
+        toggleDetection.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Disable Detection';
+        toggleDetection.classList.remove('secondary');
+        toggleDetection.classList.add('primary');
+      } else {
+        toggleDetection.innerHTML = '<i class="fa-solid fa-eye"></i> Enable Detection';
+        toggleDetection.classList.remove('primary');
+        toggleDetection.classList.add('secondary');
+        faceCountEl.textContent = '0';
+      }
+    });
+
+    // Filter selection
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+      });
+    });
+
+    // Start processing frames
+    function startProcessing() {
+      isProcessing = true;
+      processingInterval = setInterval(processFrame, 100); // Process every 100ms
+    }
+
+    // Stop processing
+    function stopProcessing() {
+      isProcessing = false;
+      if (processingInterval) {
+        clearInterval(processingInterval);
+        processingInterval = null;
+      }
+    }
+
+    // Process single frame
+    async function processFrame() {
+      if (!isProcessing || video.paused || video.ended) return;
+
+      // Draw current frame to canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Get frame as base64
+      const frameData = canvas.toDataURL('image/jpeg', 0.8);
+
+      // Determine processing mode
+      let mode = 'none';
+      if (detectionEnabled && currentFilter !== 'none') {
+        mode = 'both';
+      } else if (detectionEnabled) {
+        mode = 'detect';
+      } else if (currentFilter !== 'none') {
+        mode = 'filter';
+      }
+
+      if (mode === 'none') {
+        // Just display the video feed
+        return;
+      }
+
+      try {
+        const response = await fetch('/webcam-live/process', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            frame: frameData,
+            mode: mode,
+            filter: currentFilter
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          // Create temporary image to display processed frame
+          const img = new Image();
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.style.display = 'block';
+            video.style.display = 'none';
+            
+            // Update face count if detection is enabled
+            if (data.metadata && data.metadata.faces !== undefined) {
+              faceCountEl.textContent = data.metadata.faces;
+            }
+          };
+          img.src = data.frame;
+        }
+      } catch (err) {
+        console.error('Processing error:', err);
+      }
+    }
+
+    // Capture screenshot
+    captureBtn.addEventListener('click', () => {
+      // Capture current canvas state
+      const capturedData = canvas.style.display === 'block' 
+        ? canvas.toDataURL('image/jpeg', 0.95)
+        : (ctx.drawImage(video, 0, 0, canvas.width, canvas.height), canvas.toDataURL('image/jpeg', 0.95));
+      
+      capturedImg.src = capturedData;
+      capturePreview.classList.add('active');
+    });
+
+    // Download captured image
+    downloadCapture.addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = `lynx_capture_${Date.now()}.jpg`;
+      link.href = capturedImg.src;
+      link.click();
+    });
+  </script>
+</body>
+</html>
