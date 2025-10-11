@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lynx - Image Pixelation</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.classList.add(theme);
+    })();
+  </script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <div class="dropdown">
+        <button class="dropbtn">Image Filters <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('filters') }}">Filters</a>
+          <a href="{{ url_for('special_effects') }}">Special Effects</a>
+          <a href="{{ url_for('pixelate_image_route') }}" class="active-link">Pixelation</a>
+        </div>
+      </div>
+      <button id="theme-toggle" class="theme-btn"><i class="fa-solid fa-moon"></i></button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="face-detection">
+    <h1>Image Pixelation</h1>
+    <p class="subtitle">Upload an image and pixelate it using OpenCV. Adjust pixel size to control the level of pixelation.</p>
+
+    {% if not filename %}
+    <form method="POST" enctype="multipart/form-data">
+      <label class="upload-box" for="file-upload" id="upload-box">
+        <i class="fa-solid fa-image"></i>
+        <span id="upload-text">Click to upload image</span>
+        <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+        <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
+      </label>
+
+      <div id="preview" class="preview hidden">
+        <img id="preview-img" src="" alt="Preview">
+        <p id="file-name" class="file-name"></p>
+      </div>
+
+      <div class="slider-group" style="max-width:400px;margin:2rem auto;">
+        <label for="block_size">Pixelation Level: <span id="block-value">10</span></label>
+        <input type="range" id="block_size" name="block_size" min="2" max="100" value="10">
+      </div>
+
+      <button type="submit" id="process-btn" class="btn primary hidden">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Apply Pixelation
+      </button>
+    </form>
+    {% endif %}
+
+    {% if filename %}
+    <div class="result">
+      <h3>Pixelated Result (Block Size: {{ details.block_size }})</h3>
+      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Pixelated Image">
+      <div class="actions">
+        <a href="{{ url_for('pixelate_image_route') }}" class="btn secondary"><i class="fa-solid fa-arrow-left"></i> Try Another</a>
+        <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary"><i class="fa-solid fa-download"></i> Download</a>
+      </div>
+    </div>
+    {% endif %}
+  </main>
+
+  <footer class="footer">Built with OpenCV & Flask</footer>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const uploadBox = document.getElementById("upload-box");
+      const fileUpload = document.getElementById("file-upload");
+      const preview = document.getElementById("preview");
+      const previewImg = document.getElementById("preview-img");
+      const fileName = document.getElementById("file-name");
+      const processBtn = document.getElementById("process-btn");
+      const blockSize = document.getElementById("block_size");
+      const blockValue = document.getElementById("block-value");
+
+      blockSize.addEventListener("input", () => {
+        blockValue.textContent = blockSize.value;
+      });
+
+      fileUpload.addEventListener("change", () => {
+        const file = fileUpload.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          uploadBox.classList.add("hidden");
+          previewImg.src = e.target.result;
+          fileName.textContent = file.name;
+          preview.classList.remove("hidden");
+          processBtn.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -15,6 +15,7 @@ from models.text_extractor import extract_text_from_image
 from models.qr_detection import detect_qr_from_image
 from models.numberplate_detection import extract_numberplates
 from models.captcha_solver import solve_captcha
+from models.pixelate_image import pixelate_image
 import base64
 import time
 
@@ -810,6 +811,50 @@ def captcha_solver():
 def emoji_reactor():
     """Emoji Reactor page"""
     return render_template("emoji_reactor.html")
+
+@app.route("/pixelate-image", methods=["GET", "POST"])
+def pixelate_image_route():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template("pixelated_image.html", error="No file part in request.")
+        
+        file = request.files["file"]
+        if file.filename == "":
+            return render_template("pixelate_image.html", error="No file selected.")
+
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            input_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(input_path)
+
+            try:
+                # Get pixelation strength from form
+                block_size = int(request.form.get("block_size", 10))
+                block_size = max(2, min(block_size, 100)) # Clamp range
+
+                output_filename = f"pixelated_{block_size}_{filename}"
+                output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+                details = pixelate_image(input_path, output_path, block_size)
+
+                return render_template(
+                    "pixelate_image.html",
+                    filename=output_filename,
+                    details=details
+                )
+            except Exception as e:
+                print(f"Error during pixelation: {e}")
+                return render_template(
+                    "pixelate_image.html",
+                    error="An error occurred while pixelating the image."
+                )
+        else:
+            return render_template(
+                "pixelate_image.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+    
+    return render_template("pixelate_image.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
