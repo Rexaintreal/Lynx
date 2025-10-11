@@ -15,6 +15,7 @@ from models.text_extractor import extract_text_from_image
 from models.webcam_processing import process_frame, save_frame
 from models.qr_detection import detect_qr_from_image
 from models.numberplate_detection import extract_numberplates
+from models.captcha_solver import solve_captcha
 import base64
 import time
 
@@ -819,6 +820,59 @@ def numberplate_detection():
 
     return render_template("numberplate_detection.html", filename=None)
 
+@app.route("/captcha-solver", methods=["GET", "POST"])
+def captcha_solver():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "captcha_solver.html",
+                error="No file part in the request."
+            )
+        file = request.files["file"]
+        
+        if file.filename == "":
+            return render_template(
+                "captcha_solver.html",
+                error="No file selected. Please upload an image."
+            )
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # Get preprocessing level from form
+            preprocessing = request.form.get("preprocessing", "medium")
+
+            # Output filename
+            output_filename = f"processed_{filename}"
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+            
+            try:
+                # Run captcha solving
+                details = solve_captcha(filepath, output_path, preprocessing_level=preprocessing)
+                
+                return render_template(
+                    "captcha_solver.html",
+                    filename=output_filename,
+                    details=details
+                )
+
+            except Exception as e:
+                print(f"Error during captcha solving: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "captcha_solver.html",
+                    error="An error occurred during captcha solving. Please try again."
+                )
+        else:
+            return render_template(
+                "captcha_solver.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+    
+    return render_template("captcha_solver.html")
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
     app.run(debug=True)

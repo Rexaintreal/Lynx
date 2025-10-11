@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Captcha Solver - Solve captcha images using OpenCV and EasyOCR" />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Captcha Solver</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+  
+  <style>
+    html {
+      margin: 0;
+      padding: 0;
+    }
+    html.light {
+      background: #FAFAFA !important;
+      color: #18181B !important;
+    }
+    html.dark {
+      background: #09090B !important;
+      color: #F4F4F5 !important;
+    }
+    body {
+      margin: 0;
+    }
+    body.light {
+      background: #FAFAFA;
+      color: #18181B;
+    }
+    body.dark {
+      background: #09090B;
+      color: #F4F4F5;
+    }
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar,
+    html.dark .navbar {
+      background: rgba(9, 9, 11, 0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+    
+    .solution-box {
+      margin: 2rem 0;
+      padding: 2rem;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+      border: 2px solid #10b981;
+      border-radius: 12px;
+      text-align: center;
+    }
+    body.dark .solution-box {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+    }
+    .solution-text {
+      font-size: 2.5rem;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      color: #10b981;
+      margin: 1rem 0;
+      letter-spacing: 0.2rem;
+      text-transform: uppercase;
+    }
+    .confidence-meter {
+      margin: 1.5rem auto;
+      max-width: 300px;
+    }
+    .meter-bar {
+      height: 30px;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+    body.dark .meter-bar {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .meter-fill {
+      height: 100%;
+      transition: width 0.8s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .meter-high {
+      background: linear-gradient(90deg, #10b981, #059669);
+    }
+    .meter-medium {
+      background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+    .meter-low {
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
+    .candidates-list {
+      margin: 2rem 0;
+      text-align: left;
+    }
+    .candidate-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      transition: all 0.2s;
+    }
+    body.dark .candidate-item {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .candidate-item:hover {
+      transform: translateX(4px);
+      background: rgba(82, 82, 91, 0.1);
+    }
+    body.dark .candidate-item:hover {
+      background: rgba(212, 212, 216, 0.1);
+    }
+    .candidate-text {
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    .candidate-badge {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .copy-btn-inline {
+      background: var(--brand-accent);
+      color: white;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .copy-btn-inline:hover {
+      background: #27272A;
+      transform: scale(1.05);
+    }
+    body.dark .copy-btn-inline {
+      background: #F4F4F5;
+      color: #09090B;
+    }
+    body.dark .copy-btn-inline:hover {
+      background: #E4E4E7;
+    }
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+    .comparison-item {
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 12px;
+      padding: 1rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    body.dark .comparison-item {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .comparison-item h4 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .comparison-item img {
+      width: 100%;
+      border-radius: 8px;
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+
+      <div class="dropdown">
+        <button class="dropbtn">Face Intelligence <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('face_detection') }}">Face Detection</a>
+          <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+          <a href="{{ url_for('webcam_live') }}">Webcam Live</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Image Filters <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('filters') }}">Filters</a>
+          <a href="{{ url_for('special_effects') }}">Special Effects</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Vision Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('object_detection') }}">Object Detection</a>
+          <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+          <a href="{{ url_for('qr_detection') }}">QR Detection</a>
+          <a href="{{ url_for('numberplate_detection') }}">Number Plate Detection</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Color Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+          <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Document Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
+          <a href="{{ url_for('text_detection') }}">Text Detection</a>
+          <a href="{{ url_for('text_extractor') }}">Text Extractor</a>
+          <a href="{{ url_for('captcha_solver') }}" class="active-link">Captcha Solver</a>
+        </div>
+      </div>
+
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main class="face-detection">
+    <h1>Captcha Solver</h1>
+    <p class="subtitle">Break captcha images using advanced OpenCV preprocessing and AI-powered OCR</p>
+
+    {% if error %}
+    <div class="result" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);">
+      <p style="color: #ef4444; margin: 0;">
+        <i class="fa-solid fa-circle-exclamation"></i> {{ error }}
+      </p>
+    </div>
+    {% endif %}
+
+    {% if not filename %}
+    <form method="POST" enctype="multipart/form-data" id="upload-form">
+      <label class="upload-box" for="file-upload" id="upload-box">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span id="upload-text">Click to upload captcha image</span>
+        <small class="helper-text">PNG, JPG, JPEG • Works with text-based captchas</small>
+        <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" hidden>
+      </label>
+
+      <div id="preview" class="preview hidden">
+        <img id="preview-img" src="" alt="Preview">
+        <p class="file-name" id="file-name"></p>
+        
+        <div class="operation-selector" style="margin-top: 1.5rem; max-width: 500px;">
+          <h3><i class="fa-solid fa-sliders"></i> Preprocessing Level</h3>
+          <div class="operation-grid">
+            <label class="operation-card" style="cursor: pointer;">
+              <input type="radio" name="preprocessing" value="light" hidden>
+              <i class="fa-solid fa-feather"></i>
+              <h4>Light</h4>
+              <p>Minimal processing</p>
+            </label>
+            <label class="operation-card active" style="cursor: pointer;">
+              <input type="radio" name="preprocessing" value="medium" checked hidden>
+              <i class="fa-solid fa-wand-sparkles"></i>
+              <h4>Medium</h4>
+              <p>Balanced approach</p>
+            </label>
+            <label class="operation-card" style="cursor: pointer;">
+              <input type="radio" name="preprocessing" value="heavy" hidden>
+              <i class="fa-solid fa-hammer"></i>
+              <h4>Heavy</h4>
+              <p>Aggressive cleaning</p>
+            </label>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn primary hidden" id="process-btn">
+          <i class="fa-solid fa-unlock"></i> Solve Captcha
+        </button>
+      </div>
+    </form>
+    {% endif %}
+
+    {% if filename and details %}
+    <section class="result">
+      {% if details.status == 'success' %}
+        <h3>
+          <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> 
+          Captcha Solved Successfully!
+        </h3>
+        
+        <div class="solution-box">
+          <div style="font-size: 1rem; color: #71717A; margin-bottom: 0.5rem;">Solution:</div>
+          <div class="solution-text" id="main-solution">{{ details.solution }}</div>
+          
+          <div class="confidence-meter">
+            <div class="meter-bar">
+              <div class="meter-fill {% if details.confidence >= 70 %}meter-high{% elif details.confidence >= 40 %}meter-medium{% else %}meter-low{% endif %}" 
+                   style="width: {{ details.confidence }}%">
+                {{ details.confidence }}%
+              </div>
+            </div>
+            <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #71717A;">
+              Confidence Score
+            </div>
+          </div>
+          
+          <button class="btn primary" onclick="copySolution('{{ details.solution }}')">
+            <i class="fa-solid fa-copy"></i> Copy Solution
+          </button>
+        </div>
+        
+      {% elif details.status == 'low_confidence' %}
+        <h3>
+          <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i> 
+          Captcha Solved (Low Confidence)
+        </h3>
+        
+        <div class="solution-box" style="border-color: #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));">
+          <div style="font-size: 1rem; color: #71717A; margin-bottom: 0.5rem;">Best Guess:</div>
+          <div class="solution-text" style="color: #f59e0b;">{{ details.solution }}</div>
+          
+          <div class="confidence-meter">
+            <div class="meter-bar">
+              <div class="meter-fill meter-medium" style="width: {{ details.confidence }}%">
+                {{ details.confidence }}%
+              </div>
+            </div>
+          </div>
+          
+          <p style="color: #71717A; margin-top: 1rem;">
+            The confidence is low. Check alternative candidates below.
+          </p>
+        </div>
+        
+      {% else %}
+        <h3>
+          <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> 
+          Could Not Solve Captcha
+        </h3>
+        
+        <div class="result" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);">
+          <p style="color: #ef4444;">
+            No text could be detected. Try adjusting the preprocessing level or use a clearer image.
+          </p>
+        </div>
+      {% endif %}
+      
+      {% if details.all_candidates %}
+      <div class="candidates-list">
+        <h4><i class="fa-solid fa-list-check"></i> Alternative Candidates ({{ details.total_candidates }})</h4>
+        {% for candidate in details.all_candidates %}
+        <div class="candidate-item">
+          <span class="candidate-text">{{ candidate.text }}</span>
+          <div class="candidate-badge">
+            <span class="object-count" style="background: {% if candidate.confidence >= 70 %}#10b981{% elif candidate.confidence >= 40 %}#f59e0b{% else %}#71717A{% endif %};">
+              {{ candidate.confidence }}%
+            </span>
+            <button class="copy-btn-inline" onclick="copySolution('{{ candidate.text }}')">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      
+      <div class="comparison-grid">
+        <div class="comparison-item">
+          <h4><i class="fa-solid fa-image"></i> Original Captcha</h4>
+          <img src="{{ url_for('uploaded_file', filename=filename.replace('processed_', '')) }}" alt="Original">
+        </div>
+        
+        <div class="comparison-item">
+          <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Preprocessed Image</h4>
+          <img src="{{ url_for('uploaded_file', filename=details.processed_image) }}" alt="Processed">
+        </div>
+        
+        <div class="comparison-item">
+          <h4><i class="fa-solid fa-check-double"></i> Solution Visualization</h4>
+          <img src="{{ url_for('uploaded_file', filename=details.viz_image) }}" alt="Result">
+        </div>
+      </div>
+      
+      <div class="detection-stats" style="text-align: left; margin: 2rem 0;">
+        <h4><i class="fa-solid fa-chart-simple"></i> Processing Details</h4>
+        <ul class="object-list">
+          <li>
+            <span class="object-name">Preprocessing Used</span>
+            <span class="object-count">{{ details.preprocessing_used|title }}</span>
+          </li>
+          <li>
+            <span class="object-name">Total Candidates Found</span>
+            <span class="object-count">{{ details.total_candidates }}</span>
+          </li>
+          <li>
+            <span class="object-name">Image Size</span>
+            <span class="object-count">{{ details.image_size }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="actions">
+        <a href="{{ url_for('uploaded_file', filename=details.viz_image) }}" download class="btn primary">
+          <i class="fa-solid fa-download"></i> Download Result
+        </a>
+        <a href="{{ url_for('captcha_solver') }}" class="btn secondary">
+          <i class="fa-solid fa-arrow-rotate-right"></i> Solve Another
+        </a>
+      </div>
+    </section>
+    {% endif %}
+  </main>
+
+  <footer class="footer">Built with OpenCV & Flask</footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    // Handle operation card selection
+    document.querySelectorAll('.operation-card').forEach(card => {
+      card.addEventListener('click', function() {
+        document.querySelectorAll('.operation-card').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        this.querySelector('input[type="radio"]').checked = true;
+      });
+    });
+
+    // Copy solution function
+    function copySolution(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        btn.style.background = '#10b981';
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+          btn.style.background = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
+    }
+  </script>
+</body>
+</html>
