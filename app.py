@@ -12,7 +12,6 @@ from models.special_effects import apply_special_effect
 from models.document_scanner import scan_document
 from models.text_detection import detect_text_regions, extract_text_basic
 from models.text_extractor import extract_text_from_image
-from models.webcam_processing import process_frame, save_frame
 from models.qr_detection import detect_qr_from_image
 from models.numberplate_detection import extract_numberplates
 from models.captcha_solver import solve_captcha
@@ -676,73 +675,6 @@ def text_extractor():
 @app.route("/webcam-live", methods=["GET"])
 def webcam_live():
     return render_template("webcam_live.html")
-
-@app.route("/webcam-live/process", methods=["POST"])
-def webcam_process():
-    try:
-        data = request.get_json()
-
-        frame_data = data.get("frame")
-        mode = data.get("mode", "detect")
-        filter_type = data.get("filter", "none")
-
-        if not frame_data:
-            return jsonify({
-                "success": False,
-                "error": "No frame data provided"
-            }), 400
-        
-        # Process the frame
-        result = process_frame(frame_data, mode=mode, filter_type=filter_type)
-
-        return jsonify(result)
-    
-    except Exception as e:
-        print(f"Error processing webcam frame: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-@app.route("/webcam-live/capture", methods=["POST"])
-def webcam_capture():
-    try:
-        data = request.get_json()
-        frame_data = data.get("frame")
-
-        if not frame_data:
-            return jsonify({
-                "success": False,
-                "error": "No frame data provided"
-            }), 400
-        
-        # Generate unique filename
-        timestamp = str(int(time.time() * 1000))
-        filename = f"webcam_capture_{timestamp}.jpg"
-        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-
-        # Save the image
-        if save_frame(frame_data, filepath):
-            return jsonify({
-                "success": True,
-                "filename": filename,
-                "url": url_for("uploaded_file", filename=filename)
-            })
-        else:
-            return jsonify({
-                "success": False,
-                "error": "Failed to save frame"
-            }), 500
-    except Exception as e:
-        print(f"Error capturing frame: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
     
 @app.route("/qr_detection", methods=["GET", "POST"])
 def qr_detection():
