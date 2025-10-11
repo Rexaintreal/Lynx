@@ -16,6 +16,7 @@ from models.qr_detection import detect_qr_from_image
 from models.numberplate_detection import extract_numberplates
 from models.captcha_solver import solve_captcha
 from models.pixelate_image import pixelate_image
+from models.background_remover import remove_background
 import base64
 import time
 
@@ -848,6 +849,88 @@ def pixelate_image_route():
         else:
             return render_template("pixelate_image.html", error="Invalid file type.")
     return render_template("pixelate_image.html")
+
+
+@app.route("/background-remover", methods=["GET", "POST"])
+def background_remover():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "background_remover.html",
+                error="No file part in the request."
+            )
+        
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "background_remover.html",
+                error="No file selected. Please upload an image"
+            )
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # Get method from form
+            method = request.form.get("method", "grabcut")
+
+            # Output filename
+            output_filename = f"bg_removed_{method}_{filename}"
+            # Change extension to PNG to support transparency
+            output_filename = output_filename.rsplit('.', 1)[0] + '.png'
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                # Prepare kwargs based on method
+                kwargs = {}
+
+                if method == "grabcut":
+                    kwargs['iterations'] = int(request.form.get("iterations", 5))
+                    kwargs['margin'] = int(request.form.get("margin", 10))
+
+                elif method == "edge":
+                    kwargs['canny_low'] = int(request.form.get("canny_low", 50))
+                    kwargs['canny_high'] = int(request.form.get("canny_high", 150))
+                    kwargs['dilate_iter'] = 3
+                
+                elif method == "color":
+                    bg_hex = request.form.get("bg_color", "#ffffff")
+                    bg_rgb = tuple(int(bg_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+                    kwargs['bg_color'] = bg_rgb
+                    kwargs['threshold'] = int(request.form.get("threshold", 40))
+                
+                elif method == "contour":
+                    kwargs['min_area'] = int(request.form.get("min_area", 1000))
+
+                elif method == "threshold":
+                    kwargs['threshold_value'] = int(request.form.get("threshold_value", 127))
+
+                # Run background removal
+                details = remove_background(filepath, output_path, method=method, **kwargs)
+                
+                return render_template(
+                    "background_remover.html",
+                    filename=output_filename,
+                    details=details
+                )
+            except Exception as e:
+                print(f"Error during background removal: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "background_remover.html",
+                    error="An error occurred during background removal. Please try again."
+                )
+        else:
+            return render_template(
+                "background_remover.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+    
+    return render_template("background_remover.html")
+
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)

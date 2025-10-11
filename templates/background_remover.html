@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Background Remover - Remove backgrounds using OpenCV algorithms." />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - Background Remover</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <!-- Theme initialization -->
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+
+  <!-- Prevent flash -->
+  <style>
+    html { margin: 0; padding: 0; }
+    html.light { background: #FAFAFA !important; color: #18181B !important; }
+    html.dark { background: #09090B !important; color: #F4F4F5 !important; }
+    body { margin: 0; }
+    body.light { background: #FAFAFA; color: #18181B; }
+    body.dark { background: #09090B; color: #F4F4F5; }
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar, html.dark .navbar {
+      background: rgba(9, 9, 11, 0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .processing-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .processing-overlay.active {
+      display: flex;
+    }
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+
+  <!-- Fonts -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <!-- Processing Overlay -->
+  <div class="processing-overlay" id="processing-overlay">
+    <div style="text-align: center; color: white;">
+      <div class="spinner"></div>
+      <p style="margin-top: 20px;">Processing with OpenCV...</p>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+
+      <div class="dropdown">
+        <button class="dropbtn">Face Intelligence <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('face_detection') }}">Face Detection</a>
+          <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+          <a href="{{ url_for('webcam_live') }}">Webcam Live</a>
+          <a href="{{ url_for('emoji_reactor') }}">Emoji Reactor</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Image Filters <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('filters') }}">Filters</a>
+          <a href="{{ url_for('special_effects') }}">Special Effects</a>
+          <a href="{{ url_for('pixelate_image_route') }}">Pixelation</a>
+          <a href="{{ url_for('background_remover') }}">Background Remover</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Vision Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('object_detection') }}">Object Detection</a>
+          <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+          <a href="{{ url_for('qr_detection') }}">QR Detection</a>
+          <a href="{{ url_for('numberplate_detection') }}">Number Plate Detection</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Color Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+          <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Document Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
+          <a href="{{ url_for('text_detection') }}">Text Detection</a>
+          <a href="{{ url_for('text_extractor') }}">Text Extractor</a>
+          <a href="{{ url_for('captcha_solver') }}">Captcha Solver</a>
+        </div>
+      </div>
+
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="filters-page">
+    <h1 class="page-title">Background Remover</h1>
+    <p class="subtitle">Remove backgrounds using advanced OpenCV algorithms - GrabCut, edge detection, color-based, and more.</p>
+
+    {% if error %}
+    <div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #ef4444; text-align: center; max-width: 600px; margin: 2rem auto;">
+      <i class="fa-solid fa-exclamation-circle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    {% if not filename %}
+    <!-- Upload Form -->
+    <form method="POST" enctype="multipart/form-data" id="bg-form">
+      <div class="upload-section">
+        <label class="upload-box" for="bg-file-upload" id="bg-upload-box">
+          <i class="fa-solid fa-upload"></i>
+          <span id="bg-upload-text">Click to upload image</span>
+          <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+          <input type="file" id="bg-file-upload" name="file" accept=".png,.jpg,.jpeg" hidden required>
+        </label>
+      </div>
+
+      <!-- Preview Section -->
+      <div id="bg-preview" class="preview hidden">
+        <div class="preview-container">
+          <img id="bg-preview-img" src="" alt="Preview" class="preview-img">
+          <p id="bg-file-name" class="file-name"></p>
+        </div>
+      </div>
+
+      <!-- Method Selection -->
+      <div id="bg-method-section" class="operation-selector hidden" style="max-width: 800px; margin: 2rem auto;">
+        <h3><i class="fa-solid fa-scissors"></i> Choose Removal Method</h3>
+        <div class="operation-grid">
+          <label class="operation-card active" data-method="grabcut">
+            <input type="radio" name="method" value="grabcut" checked hidden>
+            <i class="fa-solid fa-crop-simple"></i>
+            <h4>GrabCut</h4>
+            <p>Most accurate, automatic foreground detection</p>
+          </label>
+
+          <label class="operation-card" data-method="edge">
+            <input type="radio" name="method" value="edge" hidden>
+            <i class="fa-solid fa-vector-square"></i>
+            <h4>Edge Detection</h4>
+            <p>Contour-based removal with Canny edges</p>
+          </label>
+
+          <label class="operation-card" data-method="color">
+            <input type="radio" name="method" value="color" hidden>
+            <i class="fa-solid fa-droplet"></i>
+            <h4>Color-Based</h4>
+            <p>Remove background by color similarity</p>
+          </label>
+
+          <label class="operation-card" data-method="contour">
+            <input type="radio" name="method" value="contour" hidden>
+            <i class="fa-solid fa-draw-polygon"></i>
+            <h4>Contour</h4>
+            <p>Area-based contour filtering</p>
+          </label>
+
+          <label class="operation-card" data-method="threshold">
+            <input type="radio" name="method" value="threshold" hidden>
+            <i class="fa-solid fa-adjust"></i>
+            <h4>Threshold</h4>
+            <p>Simple binary threshold removal</p>
+          </label>
+        </div>
+
+        <!-- Method-specific options -->
+        <div id="bg-method-options" style="margin-top: 2rem;">
+          <!-- GrabCut options -->
+          <div id="grabcut-options" class="method-options">
+            <div class="slider-group">
+              <label>Iterations: <span id="bg-iterations-val">5</span></label>
+              <input type="range" name="iterations" id="bg-iterations" min="1" max="10" value="5">
+            </div>
+            <div class="slider-group">
+              <label>Margin: <span id="bg-margin-val">10</span>px</label>
+              <input type="range" name="margin" id="bg-margin" min="5" max="50" value="10">
+            </div>
+          </div>
+
+          <!-- Edge options -->
+          <div id="edge-options" class="method-options hidden">
+            <div class="slider-group">
+              <label>Canny Low: <span id="bg-canny-low-val">50</span></label>
+              <input type="range" name="canny_low" id="bg-canny-low" min="10" max="100" value="50">
+            </div>
+            <div class="slider-group">
+              <label>Canny High: <span id="bg-canny-high-val">150</span></label>
+              <input type="range" name="canny_high" id="bg-canny-high" min="100" max="300" value="150">
+            </div>
+          </div>
+
+          <!-- Color options -->
+          <div id="color-options" class="method-options hidden">
+            <div class="control-group">
+              <label>Background Color</label>
+              <input type="color" name="bg_color" value="#ffffff">
+            </div>
+            <div class="slider-group">
+              <label>Threshold: <span id="bg-color-threshold-val">40</span></label>
+              <input type="range" name="threshold" id="bg-color-threshold" min="10" max="100" value="40">
+            </div>
+          </div>
+
+          <!-- Contour options -->
+          <div id="contour-options" class="method-options hidden">
+            <div class="slider-group">
+              <label>Min Area: <span id="bg-min-area-val">1000</span>px²</label>
+              <input type="range" name="min_area" id="bg-min-area" min="100" max="5000" step="100" value="1000">
+            </div>
+          </div>
+
+          <!-- Threshold options -->
+          <div id="threshold-options" class="method-options hidden">
+            <div class="slider-group">
+              <label>Threshold Value: <span id="bg-threshold-val">127</span> <small>(0 = Auto)</small></label>
+              <input type="range" name="threshold_value" id="bg-threshold-value" min="0" max="255" value="127">
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn primary">
+            <i class="fa-solid fa-scissors"></i> Remove Background
+          </button>
+        </div>
+      </div>
+    </form>
+
+    {% else %}
+    <!-- Results -->
+    <div class="result">
+      <h3><i class="fa-solid fa-check-circle"></i> Background Removed Successfully</h3>
+      
+      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Result">
+      
+      {% if details %}
+      <div class="detection-stats">
+        <h4><i class="fa-solid fa-info-circle"></i> Processing Details</h4>
+        <div class="analysis-details">
+          <div class="analysis-item">
+            <span class="analysis-label">Method</span>
+            <span class="analysis-value">{{ details.method.title() }}</span>
+          </div>
+          <div class="analysis-item">
+            <span class="analysis-label">Dimensions</span>
+            <span class="analysis-value">{{ details.dimensions }}</span>
+          </div>
+          {% for key, value in details.processing_info.items() %}
+          <div class="analysis-item">
+            <span class="analysis-label">{{ key.replace('_', ' ').title() }}</span>
+            <span class="analysis-value">{{ value }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="actions">
+        <a href="{{ url_for('background_remover') }}" class="btn secondary">
+          <i class="fa-solid fa-arrow-left"></i> Try Another
+        </a>
+        <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary">
+          <i class="fa-solid fa-download"></i> Download
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </main>
+
+  <footer class="footer">Built with OpenCV & Flask</footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    // Background Remover specific JavaScript (using unique IDs to avoid conflicts)
+    (function() {
+      // Method card selection
+      const methodCards = document.querySelectorAll('.operation-card');
+      const methodOptionsContainers = document.querySelectorAll('.method-options');
+      
+      methodCards.forEach(card => {
+        const radioInput = card.querySelector('input[type="radio"]');
+        
+        card.addEventListener('click', () => {
+          methodCards.forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          radioInput.checked = true;
+          
+          const method = card.dataset.method;
+          methodOptionsContainers.forEach(opt => opt.classList.add('hidden'));
+          const optionsDiv = document.getElementById(`${method}-options`);
+          if (optionsDiv) {
+            optionsDiv.classList.remove('hidden');
+          }
+        });
+      });
+
+      // File upload preview
+      const bgFileUpload = document.getElementById('bg-file-upload');
+      const bgUploadBox = document.getElementById('bg-upload-box');
+      const bgMethodSection = document.getElementById('bg-method-section');
+      const bgPreview = document.getElementById('bg-preview');
+      const bgPreviewImg = document.getElementById('bg-preview-img');
+      const bgFileName = document.getElementById('bg-file-name');
+      
+      if (bgFileUpload) {
+        bgFileUpload.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          
+          if (file.size > 10 * 1024 * 1024) {
+            alert('File too large! Maximum size is 10MB.');
+            bgFileUpload.value = '';
+            return;
+          }
+          
+          if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+            alert('Invalid file type! Please upload PNG, JPG, or JPEG.');
+            bgFileUpload.value = '';
+            return;
+          }
+          
+          // Read and preview image
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            bgPreviewImg.src = e.target.result;
+            bgFileName.textContent = file.name;
+            bgPreview.classList.remove('hidden');
+            bgUploadBox.style.display = 'none';
+          };
+          reader.readAsDataURL(file);
+          
+          bgMethodSection.classList.remove('hidden');
+        });
+      }
+
+      // Slider value updates
+      const sliders = [
+        { id: 'bg-iterations', display: 'bg-iterations-val' },
+        { id: 'bg-margin', display: 'bg-margin-val', suffix: 'px' },
+        { id: 'bg-canny-low', display: 'bg-canny-low-val' },
+        { id: 'bg-canny-high', display: 'bg-canny-high-val' },
+        { id: 'bg-color-threshold', display: 'bg-color-threshold-val' },
+        { id: 'bg-min-area', display: 'bg-min-area-val', suffix: 'px²' },
+        { id: 'bg-threshold-value', display: 'bg-threshold-val' }
+      ];
+      
+      sliders.forEach(({ id, display, suffix = '' }) => {
+        const slider = document.getElementById(id);
+        const displayEl = document.getElementById(display);
+        if (slider && displayEl) {
+          slider.addEventListener('input', (e) => {
+            displayEl.textContent = e.target.value + suffix;
+          });
+        }
+      });
+
+      // Form submission with processing overlay
+      const bgForm = document.getElementById('bg-form');
+      const processingOverlay = document.getElementById('processing-overlay');
+      
+      if (bgForm) {
+        bgForm.addEventListener('submit', () => {
+          processingOverlay.classList.add('active');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
