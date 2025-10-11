@@ -873,6 +873,12 @@ def captcha_solver():
             )
     
     return render_template("captcha_solver.html")
+
+@app.route("/emoji-reactor", methods=["GET"])
+def emoji_reactor():
+    """Emoji Reactor page"""
+    return render_template("emoji_reactor.html")
+
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
     app.run(debug=True)
