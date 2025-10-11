@@ -375,21 +375,21 @@
     <p style="font-size: 0.9rem; color: #aaa;">This may take a moment</p>
   </div>
 
-  <nav class="navbar">
+    <nav class="navbar">
     <div class="logo-title">
       <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
       <span class="title">Lynx</span>
     </div>
 
     <div class="nav-links">
-      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('home') }}" aria-current="page">Home</a>
 
       <div class="dropdown">
         <button class="dropbtn">Face Intelligence <i class="fa-solid fa-caret-down"></i></button>
         <div class="dropdown-content">
           <a href="{{ url_for('face_detection') }}">Face Detection</a>
           <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
-          <a href="{{ url_for('webcam_live') }}" class="active-link">Webcam Live</a>
+          <a href="{{ url_for('webcam_live') }}">Webcam Live</a>
           <a href="{{ url_for('emoji_reactor') }}">Emoji Reactor</a>
         </div>
       </div>
@@ -399,6 +399,7 @@
         <div class="dropdown-content">
           <a href="{{ url_for('filters') }}">Filters</a>
           <a href="{{ url_for('special_effects') }}">Special Effects</a>
+          <a href="{{ url_for('pixelate_image_route') }}">Pixelation</a>
         </div>
       </div>
 
@@ -407,7 +408,7 @@
         <div class="dropdown-content">
           <a href="{{ url_for('object_detection') }}">Object Detection</a>
           <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
-          <a href="{{ url_for('qr_detection') }}">QR Detection</a>
+          <a href="{{ url_for('qr_detection') }}" class="active-link">QR Detection</a>
           <a href="{{ url_for('numberplate_detection') }}">Number Plate Detection</a>
         </div>
       </div>

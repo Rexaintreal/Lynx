@@ -816,26 +816,26 @@ def emoji_reactor():
 def pixelate_image_route():
     if request.method == "POST":
         if "file" not in request.files:
-            return render_template("pixelated_image.html", error="No file part in request.")
+            return render_template("pixelate_image.html", error="No file uploaded.")
         
         file = request.files["file"]
         if file.filename == "":
             return render_template("pixelate_image.html", error="No file selected.")
-
+        
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             input_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             file.save(input_path)
 
             try:
-                # Get pixelation strength from form
                 block_size = int(request.form.get("block_size", 10))
-                block_size = max(2, min(block_size, 100)) # Clamp range
+                mode = request.form.get("mode", "normal")
+                block_size = max(2, min(block_size, 100))
 
-                output_filename = f"pixelated_{block_size}_{filename}"
+                output_filename = f"{mode}_{block_size}_{filename}"
                 output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
 
-                details = pixelate_image(input_path, output_path, block_size)
+                details = pixelate_image(input_path, output_path, block_size, mode)
 
                 return render_template(
                     "pixelate_image.html",
@@ -843,17 +843,10 @@ def pixelate_image_route():
                     details=details
                 )
             except Exception as e:
-                print(f"Error during pixelation: {e}")
-                return render_template(
-                    "pixelate_image.html",
-                    error="An error occurred while pixelating the image."
-                )
+                print(f"Pixelation error: {e}")
+                return render_template("pixelate_image.html", error="Error processing image.")
         else:
-            return render_template(
-                "pixelate_image.html",
-                error="Invalid file type. Please upload PNG, JPG, or JPEG."
-            )
-    
+            return render_template("pixelate_image.html", error="Invalid file type.")
     return render_template("pixelate_image.html")
 
 if __name__ == "__main__":

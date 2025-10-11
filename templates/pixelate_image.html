@@ -1,45 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx Image Pixelation - Apply pixelation effects with OpenCV" />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
   <title>Lynx - Image Pixelation</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+
+  <!-- Theme initialization -->
   <script>
-    (() => {
-      const theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-      document.documentElement.classList.add(theme);
-    })();
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
   </script>
+
+  <!-- Prevent flash -->
+  <style>
+    html { margin: 0; padding: 0; }
+    html.light { background: #FAFAFA !important; color: #18181B !important; }
+    html.dark { background: #09090B !important; color: #F4F4F5 !important; }
+    body { margin: 0; }
+    body.light { background: #FAFAFA; color: #18181B; }
+    body.dark { background: #09090B; color: #F4F4F5; }
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar, html.dark .navbar {
+      background: rgba(9, 9, 11, 0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .processing-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .processing-overlay.active {
+      display: flex;
+    }
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .subtitle {
+      color: #71717A;
+      margin-top: -0.5rem;
+      font-size: 1rem;
+    }
+  </style>
+
+  <!-- Fonts -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
+
 <body>
+  <!-- Processing Overlay -->
+  <div class="processing-overlay" id="processing-overlay">
+    <div style="text-align: center; color: white;">
+      <div class="spinner"></div>
+      <p style="margin-top: 20px;">Processing with OpenCV...</p>
+    </div>
+  </div>
+
   <nav class="navbar">
     <div class="logo-title">
       <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
       <span class="title">Lynx</span>
     </div>
+
     <div class="nav-links">
-      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('home') }}" aria-current="page">Home</a>
+
+      <div class="dropdown">
+        <button class="dropbtn">Face Intelligence <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('face_detection') }}">Face Detection</a>
+          <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+          <a href="{{ url_for('webcam_live') }}">Webcam Live</a>
+          <a href="{{ url_for('emoji_reactor') }}">Emoji Reactor</a>
+        </div>
+      </div>
+
       <div class="dropdown">
         <button class="dropbtn">Image Filters <i class="fa-solid fa-caret-down"></i></button>
         <div class="dropdown-content">
           <a href="{{ url_for('filters') }}">Filters</a>
           <a href="{{ url_for('special_effects') }}">Special Effects</a>
-          <a href="{{ url_for('pixelate_image_route') }}" class="active-link">Pixelation</a>
+          <a href="{{ url_for('pixelate_image_route') }}">Pixelation</a>
         </div>
       </div>
-      <button id="theme-toggle" class="theme-btn"><i class="fa-solid fa-moon"></i></button>
+
+      <div class="dropdown">
+        <button class="dropbtn">Vision Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('object_detection') }}">Object Detection</a>
+          <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+          <a href="{{ url_for('qr_detection') }}" class="active-link">QR Detection</a>
+          <a href="{{ url_for('numberplate_detection') }}">Number Plate Detection</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Color Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+          <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
+        </div>
+      </div>
+      <div class="dropdown">
+        <button class="dropbtn">Document Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
+          <a href="{{ url_for('text_detection') }}">Text Detection</a>
+          <a href="{{ url_for('text_extractor') }}">Text Extractor</a>
+          <a href="{{ url_for('captcha_solver') }}">Captcha Solver</a>
+        </div>
+      </div>
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon"></i>
+      </button>
     </div>
   </nav>
 
-  <!-- Main -->
   <main class="face-detection">
     <h1>Image Pixelation</h1>
-    <p class="subtitle">Upload an image and pixelate it using OpenCV. Adjust pixel size to control the level of pixelation.</p>
+    <p class="subtitle">Upload an image and choose between Normal, Pixel Art, or Game Stripes style.</p>
 
     {% if not filename %}
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data" id="upload-form">
       <label class="upload-box" for="file-upload" id="upload-box">
         <i class="fa-solid fa-image"></i>
         <span id="upload-text">Click to upload image</span>
@@ -57,16 +182,25 @@
         <input type="range" id="block_size" name="block_size" min="2" max="100" value="10">
       </div>
 
+      <div class="dropdown-group" style="max-width:400px;margin:1rem auto;">
+        <label for="mode">Style</label>
+        <select id="mode" name="mode" class="styled-select">
+          <option value="normal">Normal</option>
+          <option value="pixel_art">Pixel Art</option>
+          <option value="game_stripes">Game Stripes</option>
+        </select>
+      </div>
+
       <button type="submit" id="process-btn" class="btn primary hidden">
-        <i class="fa-solid fa-wand-magic-sparkles"></i> Apply Pixelation
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Apply
       </button>
     </form>
     {% endif %}
 
     {% if filename %}
     <div class="result">
-      <h3>Pixelated Result (Block Size: {{ details.block_size }})</h3>
-      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Pixelated Image">
+      <h3>Result ({{ details.mode|capitalize }} - Block Size: {{ details.block_size }})</h3>
+      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Result Image">
       <div class="actions">
         <a href="{{ url_for('pixelate_image_route') }}" class="btn secondary"><i class="fa-solid fa-arrow-left"></i> Try Another</a>
         <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary"><i class="fa-solid fa-download"></i> Download</a>
@@ -76,8 +210,44 @@
   </main>
 
   <footer class="footer">Built with OpenCV & Flask</footer>
-  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
   <script>
+    // Theme toggle
+    const toggleBtn = document.getElementById("theme-toggle");
+    const body = document.body;
+    const html = document.documentElement;
+
+    if (toggleBtn) {
+      const savedTheme = localStorage.getItem("theme") || "light";
+      body.className = savedTheme;
+      html.className = savedTheme;
+      
+      const icon = toggleBtn.querySelector("i");
+      if (savedTheme === "dark") {
+        icon.classList.remove("fa-moon");
+        icon.classList.add("fa-sun");
+      }
+      
+      toggleBtn.addEventListener("click", () => {
+        body.classList.toggle("dark");
+        body.classList.toggle("light");
+        html.classList.toggle("dark");
+        html.classList.toggle("light");
+        
+        const icon = toggleBtn.querySelector("i");
+        if (body.classList.contains("dark")) {
+          icon.classList.remove("fa-moon");
+          icon.classList.add("fa-sun");
+          localStorage.setItem("theme", "dark");
+        } else {
+          icon.classList.remove("fa-sun");
+          icon.classList.add("fa-moon");
+          localStorage.setItem("theme", "light");
+        }
+      });
+    }
+
+    // File upload preview
     document.addEventListener("DOMContentLoaded", () => {
       const uploadBox = document.getElementById("upload-box");
       const fileUpload = document.getElementById("file-upload");
@@ -87,14 +257,33 @@
       const processBtn = document.getElementById("process-btn");
       const blockSize = document.getElementById("block_size");
       const blockValue = document.getElementById("block-value");
+      const uploadForm = document.getElementById("upload-form");
+      const processingOverlay = document.getElementById("processing-overlay");
 
+      // Update block size value display
       blockSize.addEventListener("input", () => {
         blockValue.textContent = blockSize.value;
       });
 
+      // File upload handler
       fileUpload.addEventListener("change", () => {
         const file = fileUpload.files[0];
         if (!file) return;
+
+        // Validate file size
+        if (file.size > 10 * 1024 * 1024) {
+          alert("File too large! Maximum size is 10MB.");
+          fileUpload.value = "";
+          return;
+        }
+
+        // Validate file type
+        if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
+          alert("Invalid file type! Please upload PNG, JPG, or JPEG.");
+          fileUpload.value = "";
+          return;
+        }
+
         const reader = new FileReader();
         reader.onload = e => {
           uploadBox.classList.add("hidden");
@@ -104,6 +293,11 @@
           processBtn.classList.remove("hidden");
         };
         reader.readAsDataURL(file);
+      });
+
+      // Show processing overlay on form submit
+      uploadForm.addEventListener("submit", () => {
+        processingOverlay.classList.add("active");
       });
     });
   </script>
