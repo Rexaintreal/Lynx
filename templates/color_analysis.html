@@ -90,14 +90,15 @@
           <a href="{{ url_for('ascii_art_generator') }}">ASCII Art</a>
         </div>
       </div>
-
+      
       <div class="dropdown">
         <button class="dropbtn">Vision Tools <i class="fa-solid fa-caret-down"></i></button>
         <div class="dropdown-content">
           <a href="{{ url_for('object_detection') }}">Object Detection</a>
           <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
-          <a href="{{ url_for('qr_detection') }}" class="active-link">QR Detection</a>
+          <a href="{{ url_for('qr_detection') }}">QR Detection</a>
           <a href="{{ url_for('numberplate_detection') }}">Number Plate Detection</a>
+          <a href="{{ url_for('location_analyzer') }}">Location Analyzer</a>
         </div>
       </div>
 

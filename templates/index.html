@@ -108,8 +108,9 @@
         <div class="dropdown-content">
           <a href="{{ url_for('object_detection') }}">Object Detection</a>
           <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
-          <a href="{{ url_for('qr_detection') }}" class="active-link">QR Detection</a>
+          <a href="{{ url_for('qr_detection') }}">QR Detection</a>
           <a href="{{ url_for('numberplate_detection') }}">Number Plate Detection</a>
+          <a href="{{ url_for('location_analyzer') }}">Location Analyzer</a>
         </div>
       </div>
 
@@ -247,6 +248,11 @@
         <i class="fa-solid fa-terminal"></i>
         <h3>ASCII Art Generator</h3>
         <p>Transform images into ASCII art with standard, detailed, block, edge, and braille styles.</p>
+      </div>
+      <div class="feature">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <h3>Location Analyzer</h3>
+        <p>Detect geographic clues from images - analyze architecture, vegetation, text scripts, climate, and road features.</p>
       </div>
     </section>
   </main>

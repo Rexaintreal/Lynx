@@ -18,6 +18,7 @@ from models.captcha_solver import solve_captcha
 from models.pixelate_image import pixelate_image
 from models.background_remover import remove_background
 from models.ascii_art import generate_ascii_art
+from models.location_analyzer import analyze_location
 import base64
 import time
 
@@ -1006,6 +1007,58 @@ def ascii_art_generator():
             )
     
     return render_template("ascii_art.html")
+
+@app.route("/location-analyzer", methods=["GET", "POST"])
+def location_analyzer():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "location_analyzer.html",
+                error="No file part in the request"
+            )
+        
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "location_analyzer.html",
+                error="No file selected. Please upload an image"
+            )
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # Output filename
+            output_filename = f"location_{filename}"
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                # Run location analysis
+                results = analyze_location(filepath, output_path)
+                
+                return render_template(
+                    "location_analyzer.html",
+                    filename=output_filename,
+                    results=results
+                )
+
+            except Exception as e:
+                print(f"Error during location analysis: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "location_analyzer.html",
+                    error="An error occurred during location analysis. Please try again."
+                )
+        else:
+            return render_template(
+                "location_analyzer.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+    
+    return render_template("location_analyzer.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
