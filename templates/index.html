@@ -66,10 +66,43 @@
       background: rgba(9, 9, 11, 0.8);
       border-color: rgba(255,255,255,0.1);
     }
+    .features a.feature {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .features a.feature:hover {
+      transform: scale(1.02);
+      transition: transform 0.2s ease;
+    }
+     .hackberry-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .hackberry-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    }
+
+    .hackberry-img {
+      height: 48px;
+      width: auto;
+      vertical-align: middle;
+      transition: transform 0.3s ease;
+    }
+
+    .hackberry-btn:hover .hackberry-img {
+      transform: rotate(-5deg) scale(1.1);
+    }
   </style>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
@@ -138,127 +171,154 @@
 
 
   <main class="landing">
-    <h1>Welcome to Lynx</h1>
-    <p class="subtitle">Lynx is a project combining several smaller OpenCV initiatives developed for the <a href="https://hackberry.hackclub.com">Hackberry YSWS</a> event, featuring various image processing functionalities on its website.</p>
-    <div class="buttons">
-      <a href="{{ url_for('face_detection') }}" class="btn primary">
-        <i class="fa-solid fa-user"></i> Try Face Detection
+  <h1>Welcome to Lynx</h1>
+  <p class="subtitle">
+    Lynx is a project combining several smaller OpenCV initiatives developed for the 
+    <a href="https://hackberry.hackclub.com" target="_blank" rel="noopener">Hackberry YSWS</a> event, 
+    featuring various image processing functionalities on its website.
+  </p>
+
+  <div class="buttons">
+    <div class="cta-container">
+      <a href="https://hackberry.hackclub.com" target="_blank" rel="noopener" class="btn primary hackberry-btn">
+        Explore Hackberry
       </a>
+      <img src="{{ url_for('static', filename='assets/hackberry.png') }}" 
+          alt="Hackberry Mascot Peeking" 
+          class="hackberry-mascot">
     </div>
+  </div>
 
     <section id="features" class="features">
-      <div class="feature">
+      <a href="{{ url_for('face_detection') }}" class="feature">
         <i class="fa-solid fa-face-smile"></i>
         <h3>Face Detection</h3>
         <p>Number of faces in the picture detection</p>
-      </div>
+      </a>
 
-      <div class="feature">
+      <a href="{{ url_for('face_recognition') }}" class="feature">
         <i class="fa-solid fa-user-check"></i>
         <h3>Face Recognition</h3>
         <p>Identify people & analyze attributes (age and gender).</p>
-      </div>
+      </a>
 
-      <div class="feature">
+      <a href="{{ url_for('filters') }}" class="feature">
         <i class="fa-solid fa-image"></i>
         <h3>Image Filters</h3>
         <p>Apply artistic effects instantly.</p>
-      </div>
+      </a>
 
-      <div class="feature">
+      <a href="{{ url_for('object_detection') }}" class="feature">
         <i class="fa-solid fa-eye"></i>
         <h3>Object Detection</h3>
         <p>Identify objects in any image.</p>
-      </div>
+      </a>
 
-      <div class="feature">
+      <a href="{{ url_for('scene_understanding') }}" class="feature">
         <i class="fa-solid fa-brain"></i>
         <h3>Scene Understanding</h3>
         <p>Classify scenes and analyze spatial distribution.</p>
-      </div>
+      </a>
 
-      <div class="feature">
+      <a href="{{ url_for('color_analysis') }}" class="feature">
         <i class="fa-solid fa-palette"></i>
         <h3>Color Analysis</h3>
         <p>Extract dominant colors and analyze palettes.</p>
-      </div>
+      </a>
 
-      <div class="feature">
+      <a href="{{ url_for('color_manipulation') }}" class="feature">
         <i class="fa-solid fa-wand-magic-sparkles"></i>
         <h3>Color Manipulation</h3>
         <p>Change colors, adjust saturation, and shift hues.</p>
-      </div>
+      </a>
 
-      <div class="feature">
+      <a href="{{ url_for('special_effects') }}" class="feature">
         <i class="fa-solid fa-magic"></i>
         <h3>Special Effects</h3>
         <p>Green screen, color pop, duotone, and color isolation.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('document_scanner') }}" class="feature">
         <i class="fa-solid fa-file-invoice"></i>
         <h3>Document Scanner</h3>
         <p>Auto-detect edges, dewarp, and enhance your documents instantly.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('text_detection') }}" class="feature">
         <i class="fa-solid fa-font"></i>
         <h3>Text Detection</h3>
         <p>Detect and highlight text regions in images.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('text_extractor') }}" class="feature">
         <i class="fa-solid fa-file-lines"></i>
         <h3>Text Extractor</h3>
         <p>Extract readable text from images using AI-powered OCR.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('webcam_live') }}" class="feature">
         <i class="fa-solid fa-video"></i>
         <h3>Webcam Live</h3>
         <p>Real-time face detection and filter processing.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('qr_detection') }}" class="feature">
         <i class="fa-solid fa-qrcode"></i>
         <h3>QR Detection</h3>
         <p>QR Code detection and Scanner.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('numberplate_detection') }}" class="feature">
         <i class="fa-solid fa-car"></i>
         <h3>Number Plate Detection</h3>
         <p>Extract and recognize vehicle license numbers using OpenCV & Tesseract OCR.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('captcha_solver') }}" class="feature">
         <i class="fa-solid fa-shield-halved"></i>
         <h3>Captcha Solver</h3>
         <p>Break text-based captchas using OpenCV preprocessing & AI OCR.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('emoji_reactor') }}" class="feature">
         <i class="fa-solid fa-face-laugh-beam"></i>
         <h3>Emoji Reactor</h3>
         <p>Real-time emotion detection with emoji reactions.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('pixelate_image_route') }}" class="feature">
         <i class="fa-solid fa-th"></i>
         <h3>Pixelation</h3>
         <p>Pixelate images or create retro pixel art and 2D game-style effects.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('background_remover') }}" class="feature">
         <i class="fa-solid fa-scissors"></i>
         <h3>Background Remover</h3>
         <p>Remove backgrounds with GrabCut, edge detection, and more OpenCV algorithms.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('ascii_art_generator') }}" class="feature">
         <i class="fa-solid fa-terminal"></i>
         <h3>ASCII Art Generator</h3>
         <p>Transform images into ASCII art with standard, detailed, block, edge, and braille styles.</p>
-      </div>
-      <div class="feature">
+      </a>
+
+      <a href="{{ url_for('location_analyzer') }}" class="feature">
         <i class="fa-solid fa-map-location-dot"></i>
         <h3>Location Analyzer</h3>
         <p>Detect geographic clues from images - analyze architecture, vegetation, text scripts, climate, and road features.</p>
-      </div>
+      </a>
+        <button id="back-to-top" class="back-to-top" aria-label="Back to top">
+        <i class="fa-solid fa-arrow-up"></i>
     </section>
+
   </main>
 
   <footer class="footer">Built with OpenCV & Flask</footer>
 
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</button>
 </body>
 </html>
