@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Lynx ASCII Art Generator - Convert images to ASCII art using OpenCV." />
+  <meta name="theme-color" content="#52525B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#D4D4D8" media="(prefers-color-scheme: dark)">
+  <title>Lynx - ASCII Art Generator</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='assets/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/favicon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/favicon/favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='assets/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon/favicon.ico') }}">
+  
+  <!-- Theme initialization -->
+  <script>
+  (() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme || (prefersDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+    if (theme === "dark") {
+      document.documentElement.style.background = "#09090B";
+      document.documentElement.style.color = "#F4F4F5";
+    } else {
+      document.documentElement.style.background = "#FAFAFA";
+      document.documentElement.style.color = "#18181B";
+    }
+  })();
+  </script>
+
+  <!-- Prevent flash -->
+  <style>
+    html { margin: 0; padding: 0; }
+    html.light { background: #FAFAFA !important; color: #18181B !important; }
+    html.dark { background: #09090B !important; color: #F4F4F5 !important; }
+    body { margin: 0; }
+    body.light { background: #FAFAFA; color: #18181B; }
+    body.dark { background: #09090B; color: #F4F4F5; }
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.dark .navbar, html.dark .navbar {
+      background: rgba(9, 9, 11, 0.8);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .processing-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .processing-overlay.active {
+      display: flex;
+    }
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .ascii-output {
+      background: #000;
+      color: #0f0;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.5rem;
+      line-height: 0.6rem;
+      overflow-x: auto;
+      white-space: pre;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    body.light .ascii-output {
+      background: #f5f5f5;
+      color: #000;
+    }
+  </style>
+
+  <!-- Fonts -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <!-- Processing Overlay -->
+  <div class="processing-overlay" id="processing-overlay">
+    <div style="text-align: center; color: white;">
+      <div class="spinner"></div>
+      <p style="margin-top: 20px;">Generating ASCII art with OpenCV...</p>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo-title">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Lynx Logo" class="logo-img">
+      <span class="title">Lynx</span>
+    </div>
+
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}">Home</a>
+
+      <div class="dropdown">
+        <button class="dropbtn">Face Intelligence <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('face_detection') }}">Face Detection</a>
+          <a href="{{ url_for('face_recognition') }}">Face Recognition</a>
+          <a href="{{ url_for('webcam_live') }}">Webcam Live</a>
+          <a href="{{ url_for('emoji_reactor') }}">Emoji Reactor</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Image Filters <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('filters') }}">Filters</a>
+          <a href="{{ url_for('special_effects') }}">Special Effects</a>
+          <a href="{{ url_for('pixelate_image_route') }}">Pixelation</a>
+          <a href="{{ url_for('background_remover') }}">Background Remover</a>
+          <a href="{{ url_for('ascii_art_generator') }}">ASCII Art</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Vision Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('object_detection') }}">Object Detection</a>
+          <a href="{{ url_for('scene_understanding') }}">Scene Understanding</a>
+          <a href="{{ url_for('qr_detection') }}">QR Detection</a>
+          <a href="{{ url_for('numberplate_detection') }}">Number Plate Detection</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Color Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('color_analysis') }}">Color Analysis</a>
+          <a href="{{ url_for('color_manipulation') }}">Color Manipulation</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Document Tools <i class="fa-solid fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('document_scanner') }}">Document Scanner</a>
+          <a href="{{ url_for('text_detection') }}">Text Detection</a>
+          <a href="{{ url_for('text_extractor') }}">Text Extractor</a>
+          <a href="{{ url_for('captcha_solver') }}">Captcha Solver</a>
+        </div>
+      </div>
+
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="filters-page">
+    <h1 class="page-title">ASCII Art Generator</h1>
+    <p class="subtitle">Transform images into ASCII art using various algorithms - from classic text art to detailed braille patterns.</p>
+
+    {% if error %}
+    <div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #ef4444; text-align: center; max-width: 600px; margin: 2rem auto;">
+      <i class="fa-solid fa-exclamation-circle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    {% if not filename %}
+    <!-- Upload Form -->
+    <form method="POST" enctype="multipart/form-data" id="ascii-form">
+      <div class="upload-section">
+        <label class="upload-box" for="ascii-file-upload" id="ascii-upload-box">
+          <i class="fa-solid fa-upload"></i>
+          <span id="ascii-upload-text">Click to upload image</span>
+          <small class="helper-text">PNG, JPG, JPEG (max 10MB)</small>
+          <input type="file" id="ascii-file-upload" name="file" accept=".png,.jpg,.jpeg" hidden required>
+        </label>
+      </div>
+
+      <!-- Preview Section -->
+      <div id="ascii-preview" class="preview hidden">
+        <div class="preview-container">
+          <img id="ascii-preview-img" src="" alt="Preview" class="preview-img">
+          <p id="ascii-file-name" class="file-name"></p>
+        </div>
+      </div>
+
+      <!-- Method Selection -->
+      <div id="ascii-method-section" class="operation-selector hidden" style="max-width: 800px; margin: 2rem auto;">
+        <h3><i class="fa-solid fa-terminal"></i> Choose ASCII Style</h3>
+        <div class="operation-grid">
+          <label class="operation-card active" data-method="standard">
+            <input type="radio" name="method" value="standard" checked hidden>
+            <i class="fa-solid fa-font"></i>
+            <h4>Standard</h4>
+            <p>Classic ASCII with basic character set</p>
+          </label>
+
+          <label class="operation-card" data-method="detailed">
+            <input type="radio" name="method" value="detailed" hidden>
+            <i class="fa-solid fa-code"></i>
+            <h4>Detailed</h4>
+            <p>High-detail ASCII with extended characters</p>
+          </label>
+
+          <label class="operation-card" data-method="block">
+            <input type="radio" name="method" value="block" hidden>
+            <i class="fa-solid fa-th"></i>
+            <h4>Block</h4>
+            <p>Unicode block shading characters</p>
+          </label>
+
+          <label class="operation-card" data-method="edge">
+            <input type="radio" name="method" value="edge" hidden>
+            <i class="fa-solid fa-bezier-curve"></i>
+            <h4>Edge</h4>
+            <p>Edge detection-based ASCII art</p>
+          </label>
+
+          <label class="operation-card" data-method="braille">
+            <input type="radio" name="method" value="braille" hidden>
+            <i class="fa-solid fa-braille"></i>
+            <h4>Braille</h4>
+            <p>Braille pattern characters</p>
+          </label>
+        </div>
+
+        <!-- Method-specific options -->
+        <div id="ascii-method-options" style="margin-top: 2rem;">
+          <!-- Standard options -->
+          <div id="standard-options" class="method-options">
+            <div class="slider-group">
+              <label>Width (characters): <span id="ascii-width-val">100</span></label>
+              <input type="range" name="width" id="ascii-width" min="40" max="200" value="100">
+            </div>
+            <div class="control-group">
+              <label style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" name="invert" value="true">
+                <span>Invert colors</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Detailed options -->
+          <div id="detailed-options" class="method-options hidden">
+            <div class="slider-group">
+              <label>Width (characters): <span id="ascii-detailed-width-val">120</span></label>
+              <input type="range" name="width" id="ascii-detailed-width" min="60" max="200" value="120">
+            </div>
+            <div class="control-group">
+              <label style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" name="invert" value="true">
+                <span>Invert colors</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Block options -->
+          <div id="block-options" class="method-options hidden">
+            <div class="slider-group">
+              <label>Width (characters): <span id="ascii-block-width-val">80</span></label>
+              <input type="range" name="width" id="ascii-block-width" min="40" max="150" value="80">
+            </div>
+            <div class="control-group">
+              <label style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" name="invert" value="true">
+                <span>Invert colors</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Edge options -->
+          <div id="edge-options" class="method-options hidden">
+            <div class="slider-group">
+              <label>Width (characters): <span id="ascii-edge-width-val">100</span></label>
+              <input type="range" name="width" id="ascii-edge-width" min="40" max="200" value="100">
+            </div>
+            <div class="slider-group">
+              <label>Edge Threshold Low: <span id="ascii-threshold1-val">100</span></label>
+              <input type="range" name="threshold1" id="ascii-threshold1" min="50" max="150" value="100">
+            </div>
+            <div class="slider-group">
+              <label>Edge Threshold High: <span id="ascii-threshold2-val">200</span></label>
+              <input type="range" name="threshold2" id="ascii-threshold2" min="150" max="300" value="200">
+            </div>
+          </div>
+
+          <!-- Braille options -->
+          <div id="braille-options" class="method-options hidden">
+            <div class="slider-group">
+              <label>Width (characters): <span id="ascii-braille-width-val">80</span></label>
+              <input type="range" name="width" id="ascii-braille-width" min="40" max="150" value="80">
+            </div>
+            <div class="control-group">
+              <label style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" name="invert" value="true">
+                <span>Invert colors</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn primary">
+            <i class="fa-solid fa-terminal"></i> Generate ASCII Art
+          </button>
+        </div>
+      </div>
+    </form>
+
+    {% else %}
+    <!-- Results -->
+    <div class="result">
+      <h3><i class="fa-solid fa-check-circle"></i> ASCII Art Generated Successfully</h3>
+      
+      <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Result">
+      
+      {% if details and details.ascii_text %}
+      <div style="margin-top: 2rem;">
+        <h4><i class="fa-solid fa-terminal"></i> ASCII Output</h4>
+        <div class="ascii-output">{{ details.ascii_text }}</div>
+      </div>
+      {% endif %}
+
+      {% if details %}
+      <div class="detection-stats">
+        <h4><i class="fa-solid fa-info-circle"></i> Processing Details</h4>
+        <div class="analysis-details">
+          <div class="analysis-item">
+            <span class="analysis-label">Method</span>
+            <span class="analysis-value">{{ details.method.title() }}</span>
+          </div>
+          <div class="analysis-item">
+            <span class="analysis-label">Original Dimensions</span>
+            <span class="analysis-value">{{ details.dimensions }}</span>
+          </div>
+          {% for key, value in details.processing_info.items() %}
+          <div class="analysis-item">
+            <span class="analysis-label">{{ key.replace('_', ' ').title() }}</span>
+            <span class="analysis-value">{{ value }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="actions">
+        <a href="{{ url_for('ascii_art_generator') }}" class="btn secondary">
+          <i class="fa-solid fa-arrow-left"></i> Try Another
+        </a>
+        <a href="{{ url_for('uploaded_file', filename=filename) }}" download class="btn primary">
+          <i class="fa-solid fa-download"></i> Download Image
+        </a>
+        {% if details and details.ascii_text %}
+        <button id="copy-ascii-btn" class="btn secondary">
+          <i class="fa-solid fa-copy"></i> Copy ASCII Text
+        </button>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </main>
+
+  <footer class="footer">Built with OpenCV & Flask</footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <script>
+    // ASCII Art specific JavaScript (using unique IDs to avoid conflicts)
+    (function() {
+      // Method card selection
+      const methodCards = document.querySelectorAll('.operation-card');
+      const methodOptionsContainers = document.querySelectorAll('.method-options');
+      
+      methodCards.forEach(card => {
+        const radioInput = card.querySelector('input[type="radio"]');
+        
+        card.addEventListener('click', () => {
+          methodCards.forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          radioInput.checked = true;
+          
+          const method = card.dataset.method;
+          methodOptionsContainers.forEach(opt => opt.classList.add('hidden'));
+          const optionsDiv = document.getElementById(`${method}-options`);
+          if (optionsDiv) {
+            optionsDiv.classList.remove('hidden');
+          }
+        });
+      });
+
+      // File upload preview
+      const asciiFileUpload = document.getElementById('ascii-file-upload');
+      const asciiUploadBox = document.getElementById('ascii-upload-box');
+      const asciiMethodSection = document.getElementById('ascii-method-section');
+      const asciiPreview = document.getElementById('ascii-preview');
+      const asciiPreviewImg = document.getElementById('ascii-preview-img');
+      const asciiFileName = document.getElementById('ascii-file-name');
+      
+      if (asciiFileUpload) {
+        asciiFileUpload.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          
+          if (file.size > 10 * 1024 * 1024) {
+            alert('File too large! Maximum size is 10MB.');
+            asciiFileUpload.value = '';
+            return;
+          }
+          
+          if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+            alert('Invalid file type! Please upload PNG, JPG, or JPEG.');
+            asciiFileUpload.value = '';
+            return;
+          }
+          
+          // Read and preview image
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            asciiPreviewImg.src = e.target.result;
+            asciiFileName.textContent = file.name;
+            asciiPreview.classList.remove('hidden');
+            asciiUploadBox.style.display = 'none';
+          };
+          reader.readAsDataURL(file);
+          
+          asciiMethodSection.classList.remove('hidden');
+        });
+      }
+
+      // Slider value updates
+      const sliders = [
+        { id: 'ascii-width', display: 'ascii-width-val' },
+        { id: 'ascii-detailed-width', display: 'ascii-detailed-width-val' },
+        { id: 'ascii-block-width', display: 'ascii-block-width-val' },
+        { id: 'ascii-edge-width', display: 'ascii-edge-width-val' },
+        { id: 'ascii-threshold1', display: 'ascii-threshold1-val' },
+        { id: 'ascii-threshold2', display: 'ascii-threshold2-val' },
+        { id: 'ascii-braille-width', display: 'ascii-braille-width-val' }
+      ];
+      
+      sliders.forEach(({ id, display, suffix = '' }) => {
+        const slider = document.getElementById(id);
+        const displayEl = document.getElementById(display);
+        if (slider && displayEl) {
+          slider.addEventListener('input', (e) => {
+            displayEl.textContent = e.target.value + suffix;
+          });
+        }
+      });
+
+      // Form submission with processing overlay
+      const asciiForm = document.getElementById('ascii-form');
+      const processingOverlay = document.getElementById('processing-overlay');
+      
+      if (asciiForm) {
+        asciiForm.addEventListener('submit', () => {
+          processingOverlay.classList.add('active');
+        });
+      }
+
+      // Copy ASCII text button
+      const copyAsciiBtn = document.getElementById('copy-ascii-btn');
+      if (copyAsciiBtn) {
+        copyAsciiBtn.addEventListener('click', () => {
+          const asciiText = document.querySelector('.ascii-output').textContent;
+          navigator.clipboard.writeText(asciiText).then(() => {
+            const icon = copyAsciiBtn.querySelector('i');
+            const originalHTML = copyAsciiBtn.innerHTML;
+            copyAsciiBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+            setTimeout(() => {
+              copyAsciiBtn.innerHTML = originalHTML;
+            }, 2000);
+          }).catch(err => {
+            alert('Failed to copy text');
+          });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -17,6 +17,7 @@ from models.numberplate_detection import extract_numberplates
 from models.captcha_solver import solve_captcha
 from models.pixelate_image import pixelate_image
 from models.background_remover import remove_background
+from models.ascii_art import generate_ascii_art
 import base64
 import time
 
@@ -931,6 +932,80 @@ def background_remover():
     
     return render_template("background_remover.html")
 
+@app.route("/ascii-art", methods=["GET", "POST"])
+def ascii_art_generator():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template(
+                "ascii_art.html",
+                error="No file part in the request."
+            )
+        
+        file = request.files["file"]
+
+        if file.filename == "":
+            return render_template(
+                "ascii_art.html",
+                error="No file selected. Please upload an image."
+            )
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            # Get method from form
+            method = request.form.get("method", "standard")
+
+            # Output filename
+            output_filename = f"ascii_{method}_{filename}"
+            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+
+            try:
+                # Prepare kwargs based on method
+                kwargs = {}
+                
+                # Get width parameter 
+                if method == "standard":
+                    kwargs['width'] = int(request.form.get("width", 100))
+                elif method == "detailed":
+                    kwargs['width'] = int(request.form.get("width", 120))
+                elif method == "block":
+                    kwargs['width'] = int(request.form.get("width", 80))
+                elif method == "edge":
+                    kwargs['width'] = int(request.form.get("width", 100))
+                    kwargs['threshold1'] = int(request.form.get("threshold1", 100))
+                    kwargs['threshold2'] = int(request.form.get("threshold2", 200))
+                elif method == "braille":
+                    kwargs['width'] = int(request.form.get("width", 80))
+                
+                # Check for invert option
+                if request.form.get("invert") == "true":
+                    kwargs['invert'] = True
+                
+                # Run ASCII art generation
+                details = generate_ascii_art(filepath, output_path, method=method, **kwargs)
+                
+                return render_template(
+                    "ascii_art.html",
+                    filename=output_filename,
+                    details=details
+                )
+
+            except Exception as e:
+                print(f"Error during ASCII art generation: {e}")
+                import traceback
+                traceback.print_exc()
+                return render_template(
+                    "ascii_art.html",
+                    error="An error occurred during ASCII art generation. Please try again."
+                )
+        else:
+            return render_template(
+                "ascii_art.html",
+                error="Invalid file type. Please upload PNG, JPG, or JPEG."
+            )
+    
+    return render_template("ascii_art.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)
